@@ -51,6 +51,23 @@ def rho_layer(x: float, y: float, z: float, alpha: float = 2.0) -> float:
     return max(0.0, 1.0 + alpha * z)
 
 
+def rho_sphere_bump(
+    x: float,
+    y: float,
+    z: float,
+    x0: float = 0.1,
+    y0: float = 0.0,
+    z0: float = 0.0,
+    radius: float = 0.2,
+    factor: float = 1.5,
+) -> float:
+    """구 내부(중심 x0,y0,z0, 반지름 radius)에서만 밀도를 factor배."""
+    r2 = (x - x0) ** 2 + (y - y0) ** 2 + (z - z0) ** 2
+    if r2 <= radius**2:
+        return factor
+    return 1.0
+
+
 def rho_corner_heavy(
     x: float,
     y: float,
@@ -71,6 +88,10 @@ PRESETS: dict[str, dict] = {
     "linear_x": {"func": rho_linear_x, "params": {"alpha": 2.0}},
     "layer": {"func": rho_layer, "params": {"alpha": 2.0}},
     "corner_heavy": {"func": rho_corner_heavy, "params": {}},
+    "sphere_bump": {
+        "func": rho_sphere_bump,
+        "params": {"x0": 0.1, "y0": 0.0, "z0": 0.0, "radius": 0.2, "factor": 1.5},
+    },
 }
 
 

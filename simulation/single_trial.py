@@ -16,7 +16,7 @@ from config import (
 )
 from density.grid import RhoGrid
 from physics.bodies import create_die, create_world
-from physics.faces import get_top_face
+from physics.faces import get_bottom_face
 from physics.inertia import InertiaProperties, compute_inertia
 
 
@@ -39,7 +39,7 @@ def run_single_trial(
     seed: int | None = None,
 ) -> int:
     """
-    주사위 1회 던지기 → 위쪽 면 번호(1~6) 반환.
+    주사위 1회 던지기 → 바닥의 면 번호(1~6) 반환.
 
     과정: 높이 DROP_HEIGHT에서 랜덤 자세·각속도로 시작 → 낙하 → 바닥 충돌 → 정지.
     """
@@ -76,6 +76,6 @@ def run_single_trial(
             still_count = 0
 
     _, final_orn = p.getBasePositionAndOrientation(die_id)
-    top_face = get_top_face(final_orn)
+    bottom_face = get_bottom_face(final_orn)
     p.disconnect()
-    return top_face
+    return bottom_face

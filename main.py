@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -12,7 +13,7 @@ from density.analytic import PRESETS, get_preset_rho
 from density.grid import RhoGrid
 from density.visualize import plot_rho_grid
 from simulation.monte_carlo import run_monte_carlo
-from simulation.results import save_results
+from simulation.results import create_run_directory, record_simulation_run, save_results
 from simulation.single_trial import run_single_trial
 
 
@@ -38,11 +39,11 @@ def plot_probabilities(probs: dict[int, float], n_trials: int, title: str, save_
     )
     fig.update_layout(
         title=title,
-        xaxis_title="눈 (위쪽 면)",
+        xaxis_title="바닥의 눈",
         yaxis_title="확률",
         yaxis_range=[0, max(p) * 1.3 + 0.05],
     )
-    html_path = save_path.with_suffix(".html")
+    html_path = save_path if save_path.suffix == ".html" else save_path.with_suffix(".html")
     fig.write_html(str(html_path))
 
 
@@ -73,47 +74,84 @@ def main():
         grid = get_preset_rho(args.rho, **preset_kw)
 
     print(grid)
-    grid.save(out / "rho_grid.npy")
-    plot_rho_grid(grid, title=f"밀도 분포: {rho_label}", save_path=out / "rho_density.html", show=False)
-    print(f"3D 밀도 그래프: {out / 'rho_density.html'}")
+
+    # 미리보기용 최신 밀도 그래프 (덮어쓰기)
+    preview_density = out / f"rho_density_{rho_label}.html"
+    plot_rho_grid(grid, title=f"밀도 분포: {rho_label}", save_path=preview_density, show=False)
+    print(f"3D 밀도 그래프 (미리보기): {preview_density}")
 
     if args.visualize_only:
         return
 
     if args.single_test:
         face = run_single_trial(grid, seed=42)
-        print(f"1회 시험 결과 — 위쪽 면: {face}")
+        print(f"1회 시험 결과 — 바닥의 눈: {face}")
         return
+
+    # 시뮬마다 고유 run 폴더 생성
+    run_dir, run_id = create_run_directory(out, rho_label)
+    print(f"\n시행 ID: {run_id}")
+    print(f"저장 폴더: {run_dir}")
+
+    # 밀도 격자·3D 그래프도 run 폴더에 보관
+    grid.save(run_dir / "rho_grid.npy")
+    run_density_html = run_dir / "rho_density.html"
+    shutil.copy2(preview_density, run_density_html)
 
     print(f"\n{args.trials}회 시뮬레이션 시작...")
     probs, counts = run_monte_carlo(
         grid,
         n_trials=args.trials,
         n_workers=args.workers,
-        checkpoint_path=out / "checkpoint.json",
+        checkpoint_path=run_dir / "checkpoint.json",
         checkpoint_interval=args.checkpoint_interval,
         rho_name=rho_label,
     )
 
-    print("\n=== 결과 ===")
+    print("\n=== 결과 (바닥의 눈) ===")
     for f in range(1, 7):
-        print(f"  눈 {f}: {probs[f]:.4f} ({probs[f]*100:.2f}%)")
+        print(f"  바닥의 눈 {f}: {probs[f]:.4f} ({probs[f]*100:.2f}%)")
+
+    prob_html = run_dir / "face_probabilities.html"
+    results_json = run_dir / "results.json"
 
     plot_probabilities(
         probs,
         args.trials,
-        title=f"주사위 확률분포 ({rho_label}, N={args.trials})",
-        save_path=out / "face_probabilities.html",
+        title=f"바닥의 눈 확률분포 ({rho_label}, N={args.trials})",
+        save_path=prob_html,
     )
     save_results(
-        out / "results.json",
+        results_json,
         counts=counts,
         n_trials=args.trials,
         rho_name=rho_label,
-        extra={"alpha": args.alpha},
+        extra={
+            "alpha": args.alpha,
+            "face": "bottom",
+            "run_id": run_id,
+        },
     )
-    print(f"확률 그래프: {out / 'face_probabilities.html'}")
-    print(f"결과 JSON: {out / 'results.json'}")
+
+    history_path = record_simulation_run(
+        out,
+        run_dir=run_dir,
+        run_id=run_id,
+        rho_name=rho_label,
+        n_trials=args.trials,
+        counts=counts,
+        probs=probs,
+        results_json=results_json,
+        prob_html=prob_html,
+        density_html=run_density_html,
+        extra={"alpha": args.alpha, "face": "bottom"},
+    )
+
+    print(f"\n이번 시행 저장:")
+    print(f"  확률 그래프: {prob_html}")
+    print(f"  결과 JSON:   {results_json}")
+    print(f"  밀도 3D:     {run_density_html}")
+    print(f"  누적 목록:   {history_path}")
 
 
 if __name__ == "__main__":

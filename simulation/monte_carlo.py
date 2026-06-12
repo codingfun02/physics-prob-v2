@@ -5,10 +5,9 @@ from __future__ import annotations
 from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
-from tqdm import tqdm
-
 from density.grid import RhoGrid
 from physics.inertia import compute_inertia
+from simulation.progress import MonteCarloProgress
 from simulation.results import save_checkpoint
 from simulation.single_trial import run_single_trial
 
@@ -49,21 +48,23 @@ def run_monte_carlo(
 
     with Pool(processes=n_workers, initializer=_init_worker, initargs=(grid,)) as pool:
         iterator = pool.imap(_run_one_trial, range(n_trials), chunksize=50)
-        for face in tqdm(iterator, total=n_trials, desc="시뮬레이션"):
-            counts[face] += 1
-            completed += 1
-            if (
-                checkpoint_path is not None
-                and checkpoint_interval > 0
-                and completed % checkpoint_interval == 0
-            ):
-                save_checkpoint(
-                    checkpoint_path,
-                    counts=counts,
-                    completed=completed,
-                    n_trials=n_trials,
-                    rho_name=rho_name,
-                )
+        with MonteCarloProgress(n_trials, desc="시뮬레이션") as progress:
+            for face in iterator:
+                counts[face] += 1
+                completed += 1
+                progress.update(1)
+                if (
+                    checkpoint_path is not None
+                    and checkpoint_interval > 0
+                    and completed % checkpoint_interval == 0
+                ):
+                    save_checkpoint(
+                        checkpoint_path,
+                        counts=counts,
+                        completed=completed,
+                        n_trials=n_trials,
+                        rho_name=rho_name,
+                    )
 
     probs = {face: counts[face] / n_trials for face in counts}
     return probs, counts

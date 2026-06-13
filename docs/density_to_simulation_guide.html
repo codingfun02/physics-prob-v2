@@ -121,7 +121,7 @@
 <li><a href="#2-용어-사전">용어 사전</a></li>
 <li><a href="#3-밀도-함수-ρxyz란">밀도 함수 ρ(x,y,z)란?</a></li>
 <li><a href="#4-121212-격자--왜-나누는가">12×12×12 격자 — 왜 나누는가?</a></li>
-<li><a href="#5-격자에서-질량무게중심관성-구하기">격자에서 질량·무게중심·관성 구하기</a></li>
+<li><a href="#5-격자에서-질량-질량중심-관성-구하기">격자에서 질량·질량중심·관성 구하기</a></li>
 <li><a href="#6-관성텐서와-주관성-모멘트-3개">관성텐서와 주관성 모멘트 3개</a></li>
 <li><a href="#7-pybullet에-실제로-넘기는-값들">PyBullet에 실제로 넘기는 값들</a></li>
 <li><a href="#8-초기-랜덤-조건--수학과-코드">초기 랜덤 조건 — 수학과 코드</a></li>
@@ -155,7 +155,7 @@
 <p><strong>「이 정육면체 안에 질량이 어떻게 몰려 있는지」를 숫자로 바꿔 PyBullet에 한 번 넘기기 위한 도구</strong>입니다.</p>
 <hr>
 <h2 id="2-용어-사전">2. 용어 사전</h2>
-<table><thead><tr><th>용어</th><th>기호</th><th>쉬운 뜻</th></tr></thead><tbody><tr><td>밀도</td><td>$\rho$</td><td>단위 부피당 질량. “이 점이 얼마나 꽉 찼나”</td></tr><tr><td>무게중심</td><td>COM, $\mathbf{r}_{\mathrm{cm}}$</td><td>질량의 평균 위치. 저울 위에서 균형 잡히는 점</td></tr><tr><td>질량</td><td>$M$</td><td>전체 무게(관성 질량)</td></tr><tr><td>관성 모멘트</td><td>$I$</td><td>돌리기 어려운 정도</td></tr><tr><td>관성텐서</td><td>$\mathbf{I}$ (3×3 행렬)</td><td><strong>방향마다</strong> 돌리기 어려움이 다른 경우의 $I$</td></tr><tr><td>주관성 모멘트</td><td>$I_1, I_2, I_3$</td><td>특별한 3축(주축)에서의 $I$ — 서로 독립적으로 회전</td></tr><tr><td>쿼터니언</td><td>$q = (q_x,q_y,q_z,q_w)$</td><td>3D 회전을 4개 숫자로 저장</td></tr><tr><td>각속도</td><td>$\boldsymbol{\omega}$</td><td>회전 속도 벡터 (rad/s)</td></tr><tr><td>강체</td><td>—</td><td>모양이 안 변하는 물체</td></tr><tr><td>몬테카를로</td><td>—</td><td>같은 실험을 아주 많이 반복해 확률 추정</td></tr></tbody></table>
+<table><thead><tr><th>용어</th><th>기호</th><th>쉬운 뜻</th></tr></thead><tbody><tr><td>밀도</td><td>$\rho$</td><td>단위 부피당 질량. “이 점이 얼마나 꽉 찼나”</td></tr><tr><td>질량중심</td><td>COM, $\mathbf{r}_{\mathrm{cm}}$</td><td>질량의 평균 위치. 저울 위에서 균형 잡히는 점</td></tr><tr><td>질량</td><td>$M$</td><td>전체 무게(관성 질량)</td></tr><tr><td>관성 모멘트</td><td>$I$</td><td>돌리기 어려운 정도</td></tr><tr><td>관성텐서</td><td>$\mathbf{I}$ (3×3 행렬)</td><td><strong>방향마다</strong> 돌리기 어려움이 다른 경우의 $I$</td></tr><tr><td>주관성 모멘트</td><td>$I_1, I_2, I_3$</td><td>특별한 3축(주축)에서의 $I$ — 서로 독립적으로 회전</td></tr><tr><td>쿼터니언</td><td>$q = (q_x,q_y,q_z,q_w)$</td><td>3D 회전을 4개 숫자로 저장</td></tr><tr><td>각속도</td><td>$\boldsymbol{\omega}$</td><td>회전 속도 벡터 (rad/s)</td></tr><tr><td>강체</td><td>—</td><td>모양이 안 변하는 물체</td></tr><tr><td>몬테카를로</td><td>—</td><td>같은 실험을 아주 많이 반복해 확률 추정</td></tr></tbody></table>
 <hr>
 <h2 id="3-밀도-함수-ρxyz란">3. 밀도 함수 ρ(x,y,z)란?</h2>
 <h3 id="31-수학적-정의">3.1 수학적 정의</h3>
@@ -228,7 +228,7 @@ return 1.0</code></pre>
 <h3 id="44-6×6×6이-아니라-12×12×12인-이유">4.4 6×6×6이 아니라 12×12×12인 이유</h3>
 <table><thead><tr><th>해상도</th><th>칸 수</th><th>장단점</th></tr></thead><tbody><tr><td>$6^3=216$</td><td>적음</td><td>빠르지만, <strong>안쪽 구 bump</strong>가 뭉개져 COM·관성이 부정확</td></tr><tr><td>$12^3=1728$</td><td>중간</td><td>bump <strong>형태 보존</strong>, COM·관성 오차 감소 (현재 <code>GRID_N=12</code>)</td></tr><tr><td>$24^3=13824$</td><td>많음</td><td>더 정확하지만 계산·메모리 증가</td></tr></tbody></table>
 <p><strong>비유:</strong> 사진을 픽셀 많이 찍을수록 둥근 공이 더 둥글게 보이는 것과 같습니다.  </p>
-<p>격자가 거칠면 “구 bump”가 계단 모양이 되어, 무게중심이 잘못 잡힙니다.</p>
+<p>격자가 거칠면 “구 bump”가 계단 모양이 되어, 질량중심이 잘못 잡힙니다.</p>
 <h3 id="45-격자가-pybullet-시뮬-안에서-쓰이지-않음">4.5 격자가 PyBullet 시뮬 <strong>안에서</strong> 쓰이지 않음</h3>
 <p>이 점이 <strong>가장 헷갈리기 쉬운 부분</strong>입니다.</p>
 <ul>
@@ -237,7 +237,7 @@ return 1.0</code></pre>
 </ul>
 <p>1728칸을 각각 PyBullet body로 만들지 <strong>않습니다</strong>.</p>
 <hr>
-<h2 id="5-격자에서-질량·무게중심·관성-구하기">5. 격자에서 질량·무게중심·관성 구하기</h2>
+<h2 id="5-격자에서-질량-질량중심-관성-구하기">5. 격자에서 질량·질량중심·관성 구하기</h2>
 <p><code>physics/inertia.py</code>의 <code>compute_inertia()</code>가 하는 일입니다.</p>
 <h3 id="51-총-질량-m">5.1 총 질량 $M$</h3>
 <p>연속:</p>
@@ -247,7 +247,7 @@ return 1.0</code></pre>
 <p>코드:</p>
 <pre><code class="language-python">masses = (grid.rho * grid.cell_volume).reshape(-1)
 total_mass = float(np.sum(masses))</code></pre>
-<h3 id="52-무게중심-mathbfr_mathrmcm">5.2 무게중심 $\mathbf{r}_{\mathrm{cm}}$</h3>
+<h3 id="52-질량중심-mathbfr_mathrmcm">5.2 질량중심 $\mathbf{r}_{\mathrm{cm}}$</h3>
 <p>연속:</p>
 <p>$$\mathbf{r}_{\mathrm{cm}} = \frac{1}{M} \int_\Omega \rho(\mathbf{r})\,\mathbf{r}\, dV$$</p>
 <p>격자:</p>
@@ -257,8 +257,8 @@ total_mass = float(np.sum(masses))</code></pre>
 <pre><code class="language-python">com = np.sum(masses[:, np.newaxis] * centers, axis=0) / total_mass</code></pre>
 <p><strong>예 (ctrl_factor_f50, 12³ 격자):</strong>  </p>
 <p>$\mathbf{r}_{\mathrm{cm}} \approx (0.031,\, 0,\, 0)$ — +x 쪽으로 약 3 cm 치우침.</p>
-<h3 id="53-왜-무게중심이-중요한가">5.3 왜 무게중심이 중요한가?</h3>
-<p>기하학적 중심(정육면체 가운데)과 무게중심이 다르면:</p>
+<h3 id="53-왜-질량중심이-중요한가">5.3 왜 질량중심이 중요한가?</h3>
+<p>원점과 질량중심이 다르면:</p>
 <ol>
 <li><strong>중력 토크</strong> — 같은 자세라도 “넘어지려는 방향”이 달라짐  </li>
 <li><strong>충돌 시 지레-arm</strong> — 바닥 반력이 COM과 다른 위치에서 작용 → 회전 유발  </li>
@@ -304,7 +304,7 @@ principal_axes = eigvecs[:, order]   # 주축 방향
 rot = Rotation.from_matrix(principal_axes)</code></pre>
 <h3 id="64-관성-모멘트-3개만이-전부인가">6.4 “관성 모멘트 3개만”이 전부인가?</h3>
 <p><strong>아닙니다.</strong> PyBullet에 필요한 것:</p>
-<table><thead><tr><th>넘기는 값</th><th>개수</th><th>PyBullet 인자</th></tr></thead><tbody><tr><td>총 질량 $M$</td><td>1</td><td><code>baseMass</code></td></tr><tr><td>무게중심</td><td>3</td><td><code>baseInertialFramePosition</code></td></tr><tr><td>주관성 모멘트</td><td>3</td><td><code>localInertiaDiagonal</code></td></tr><tr><td>주축 방향 (회전)</td><td>4 (쿼터니언)</td><td><code>baseInertialFrameOrientation</code></td></tr><tr><td>충돌 모양</td><td>상자 1개</td><td><code>GEOM_BOX</code></td></tr></tbody></table>
+<table><thead><tr><th>넘기는 값</th><th>개수</th><th>PyBullet 인자</th></tr></thead><tbody><tr><td>총 질량 $M$</td><td>1</td><td><code>baseMass</code></td></tr><tr><td>질량중심</td><td>3</td><td><code>baseInertialFramePosition</code></td></tr><tr><td>주관성 모멘트</td><td>3</td><td><code>localInertiaDiagonal</code></td></tr><tr><td>주축 방향 (회전)</td><td>4 (쿼터니언)</td><td><code>baseInertialFrameOrientation</code></td></tr><tr><td>충돌 모양</td><td>상자 1개</td><td><code>GEOM_BOX</code></td></tr></tbody></table>
 <p>합치면 <strong>스칼라 1 + 벡터 3 + 대각 3 + 쿼터니언 4</strong> + 마찰·반발 등.</p>
 <hr>
 <h2 id="7-pybullet에-실제로-넘기는-값들">7. PyBullet에 실제로 넘기는 값들</h2>
@@ -329,7 +329,7 @@ p.changeDynamics(
       ↕ principal_quat
 [주관성 좌표계]        돌리기 쉬운/어려운 축
       ↕ COM offset
-[질량 중심]            실제 무게중심 위치</code></pre>
+[질량중심]            실제 질량중심 위치</code></pre>
 <ul>
 <li><strong>충돌 상자:</strong> body 좌표계에서 항상 <strong>대칭</strong> 정육면체</li>
 <li><strong>질량 분포:</strong> COM이 치우쳐 있고, 관성도 비대칭</li>

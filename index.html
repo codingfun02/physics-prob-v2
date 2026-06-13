@@ -6,74 +6,244 @@
   <title>시뮬레이션 결과 대시보드</title>
   <style>
     :root {
-      --bg: #f4f5f7; --sidebar: #1e293b; --sidebar-text: #e2e8f0;
-      --accent: #3b82f6; --border: #cbd5e1;
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --sidebar: #0f172a;
+      --sidebar-muted: #94a3b8;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --accent: #2563eb;
+      --accent-soft: #dbeafe;
+      --border: #e2e8f0;
+      --radius: 10px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; overflow: hidden; }
-    body { font-family: "Segoe UI", system-ui, sans-serif; background: var(--bg); display: flex; flex-direction: column; }
+    body {
+      font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
     header {
-      flex-shrink: 0; background: #fff; border-bottom: 1px solid var(--border);
-      padding: 8px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; z-index: 10;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      z-index: 10;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
-    header h1 { font-size: 1rem; font-weight: 600; }
-    #run-count { font-size: 0.8rem; color: #64748b; }
-    .toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-left: auto; }
-    .view-tabs { display: flex; gap: 4px; }
-    .view-tabs button, .toolbar > button, .toolbar > select, .panel-toggle {
-      font: inherit; font-size: 0.85rem; padding: 5px 10px;
-      border: 1px solid var(--border); border-radius: 6px; background: #fff; cursor: pointer;
+    .brand { display: flex; flex-direction: column; gap: 2px; }
+    header h1 { font-size: 1.05rem; font-weight: 700; letter-spacing: -0.02em; }
+    #run-count { font-size: 0.75rem; color: var(--text-muted); }
+    .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex: 1; justify-content: flex-end; }
+    .view-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: var(--bg);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
     }
-    .view-tabs button.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
-    .view-tabs button:disabled { opacity: 0.4; cursor: not-allowed; }
-    button:hover:not(:disabled) { background: #f1f5f9; }
-    .view-tabs button.active:hover { background: #2563eb; }
-    .panel-toggle.on { background: #e0e7ff; border-color: var(--accent); color: #1d4ed8; }
-    #item-select { max-width: 300px; }
-    .nav-controls { display: flex; align-items: center; gap: 6px; }
+    .view-tabs button, .toolbar > button {
+      font: inherit;
+      font-size: 0.875rem;
+      padding: 8px 14px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .view-tabs button {
+      font-weight: 500;
+    }
+    .view-tabs button.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.35);
+    }
+    .view-tabs button:disabled { opacity: 0.35; cursor: not-allowed; }
+    .view-tabs button:hover:not(:disabled):not(.active) { background: var(--surface); }
+    .panel-toggle {
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .panel-toggle.on { background: var(--accent-soft); border-color: #93c5fd; color: var(--accent); }
+    .panel-toggle:hover { background: #f8fafc; }
+    .export-btn {
+      border: 1px solid #93c5fd;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+      white-space: nowrap;
+      padding: 8px 14px;
+      border-radius: 8px;
+    }
+    .export-btn:hover:not(:disabled) {
+      background: var(--accent-soft);
+      border-color: #93c5fd;
+      color: var(--accent);
+    }
+    .export-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .nav-controls {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+      max-width: 420px;
+    }
     .nav-controls.hidden { display: none; }
-    .info-bar { flex: 1; min-width: 180px; font-size: 0.78rem; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nav-controls button {
+      flex-shrink: 0;
+      width: 52px;
+      min-height: 52px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 10px;
+      font-size: 1.5rem;
+      line-height: 1;
+      color: var(--accent);
+      font-weight: 700;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+    .nav-controls button:hover:not(:disabled) { background: var(--accent-soft); border-color: #93c5fd; }
+    .nav-controls button:active:not(:disabled) { transform: scale(0.97); }
+    .nav-controls button:disabled {
+      opacity: 0.35;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-color: var(--border);
+      box-shadow: none;
+    }
+    .nav-current {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .layout { display: flex; flex: 1; min-height: 0; overflow: hidden; }
-    aside { width: 300px; background: var(--sidebar); color: var(--sidebar-text); overflow-y: auto; flex-shrink: 0; transition: width 0.2s; }
-    body.sidebar-hidden aside { width: 0; overflow: hidden; border: none; }
+    aside {
+      width: 280px;
+      background: var(--sidebar);
+      color: #f8fafc;
+      overflow-y: auto;
+      flex-shrink: 0;
+      transition: width 0.2s ease;
+    }
+    body.sidebar-hidden aside { width: 0; overflow: hidden; }
     .run-list { list-style: none; }
     .study-header {
-      padding: 12px 12px 4px; font-size: 0.8rem; font-weight: 700;
-      color: #e2e8f0; background: #020617; position: sticky; top: 0; z-index: 2;
+      padding: 14px 16px 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: #64748b;
+      background: #0b1220;
     }
     .group-header {
-      padding: 8px 12px 6px 14px; font-size: 0.72rem; font-weight: 600;
-      line-height: 1.35; color: #93c5fd; background: #0f172a; position: sticky; top: 2rem; z-index: 1;
+      padding: 12px 16px 8px 16px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      line-height: 1.45;
+      color: #e2e8f0;
+      background: #1e293b;
+      border-top: 1px solid #334155;
     }
-    .run-item { padding: 9px 12px 9px 18px; border-bottom: 1px solid #334155; cursor: pointer; }
-    .run-item:hover { background: #334155; }
-    .run-item.active { background: var(--accent); }
-    .run-item .name { font-weight: 600; font-size: 0.86rem; line-height: 1.3; }
-    .run-item .sub { font-size: 0.68rem; opacity: 0.75; margin-top: 2px; }
-    .run-item .meta { font-size: 0.7rem; opacity: 0.85; margin-top: 2px; }
-    .tag-preview { font-size: 0.65rem; background: #475569; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
-    main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: #fff; overflow: hidden; }
-    .viewer-wrap { flex: 1; min-height: 0; position: relative; }
-    iframe { width: 100%; height: 100%; border: none; display: block; min-height: 280px; }
-    .summary { flex-shrink: 0; max-height: 38vh; background: #fff; border-top: 1px solid var(--border); padding: 8px 12px; font-size: 0.78rem; overflow: auto; transition: max-height 0.25s; }
-    body.summary-hidden .summary { max-height: 0; padding: 0; border-top: none; overflow: hidden; }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { padding: 5px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-    th { color: #64748b; font-weight: 600; position: sticky; top: 0; background: #fff; }
-    .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; background: #fef3c7; color: #92400e; }
-    .conditions-panel {
-      flex-shrink: 0; max-height: 28vh; overflow-y: auto;
-      background: #f8fafc; border-top: 1px solid var(--border);
-      padding: 10px 14px; font-size: 0.8rem; color: #334155;
+    .run-item {
+      padding: 11px 16px 11px 28px;
+      border-bottom: 1px solid #1e293b;
+      border-left: 3px solid transparent;
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
     }
-    body.conditions-hidden .conditions-panel { display: none; }
-    .conditions-panel h3 { font-size: 0.88rem; margin-bottom: 8px; color: #0f172a; }
-    .cond-summary { font-weight: 600; margin-bottom: 10px; color: #1e40af; }
-    .cond-section { margin-bottom: 10px; }
-    .cond-section h4 { font-size: 0.78rem; color: #64748b; margin-bottom: 4px; font-weight: 700; }
-    .cond-section ul { margin: 0; padding-left: 1.2rem; }
-    .cond-section li { margin: 2px 0; line-height: 1.45; }
-    .summary-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .run-item:hover { background: #1e293b; }
+    .run-item.active {
+      background: var(--accent);
+      border-left-color: #bfdbfe;
+    }
+    .run-item .name { font-weight: 600; font-size: 0.95rem; line-height: 1.35; }
+    .badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.65rem;
+      background: #fef3c7;
+      color: #92400e;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+      background: var(--surface);
+      overflow: hidden;
+    }
+    .viewer-wrap {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      background: #fafbfc;
+    }
+    .viewer-wrap.density-view {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 6px 8px 10px;
+    }
+    .viewer-wrap.density-view iframe {
+      width: 100%;
+      max-width: 100%;
+      height: 100%;
+      border-radius: 8px;
+      box-shadow: 0 2px 14px rgba(15, 23, 42, 0.07);
+      background: #fff;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      min-height: 280px;
+      background: #fafbfc;
+    }
+    .viewer-loading {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(248, 250, 252, 0.85);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .viewer-loading.visible { opacity: 1; }
     @media (max-width: 768px) {
       html, body {
         height: 100%;
@@ -81,94 +251,279 @@
         overflow: hidden;
         position: fixed;
         width: 100%;
-        -webkit-overflow-scrolling: touch;
       }
-      header { padding: 10px 12px; flex-direction: column; align-items: stretch; flex-shrink: 0; }
-      header h1 { font-size: 1.05rem; }
-      #run-count { order: 3; }
-      .info-bar { order: 2; white-space: normal; line-height: 1.35; min-width: 0; }
-      .toolbar { margin-left: 0; width: 100%; justify-content: stretch; order: 4; }
-      .view-tabs { flex: 1; }
-      .view-tabs button { flex: 1; padding: 10px 6px; font-size: 0.8rem; }
-      .toolbar > button, .panel-toggle { padding: 10px 12px; min-height: 44px; }
-      #item-select { max-width: none; flex: 1; min-height: 44px; font-size: 1rem; }
-      .nav-controls { width: 100%; }
-      .nav-controls button { min-width: 44px; min-height: 44px; }
-      .layout { flex: 1; flex-direction: column; min-height: 0; overflow: hidden; }
+      .brand { display: none; }
+      header {
+        padding: 6px 10px;
+        gap: 6px;
+        flex-wrap: nowrap;
+      }
+      .toolbar {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+      }
+      .nav-controls {
+        order: 1;
+        max-width: none;
+        width: 100%;
+      }
+      .nav-controls button {
+        width: 56px;
+        min-height: 56px;
+        font-size: 1.75rem;
+      }
+      .nav-current {
+        font-size: 1.1rem;
+        min-height: 56px;
+      }
+      .view-tabs {
+        order: 2;
+        width: 100%;
+      }
+      .view-tabs button {
+        flex: 1;
+        padding: 8px 4px;
+        font-size: 0.8rem;
+      }
+      .panel-toggle {
+        order: 3;
+        width: 100%;
+        min-height: 40px;
+        font-size: 0.85rem;
+      }
+      .export-btn {
+        order: 3;
+        width: 100%;
+        min-height: 40px;
+      }
+      #btn-export-group {
+        order: 2;
+      }
+      .layout { flex: 1; flex-direction: column; min-height: 0; }
       main { flex: 1; min-height: 0; }
       aside {
-        width: 100%; position: fixed; left: 0; right: 0; bottom: 0;
-        max-height: 70vh; z-index: 50; box-shadow: 0 -4px 24px rgba(0,0,0,0.25);
-        border-radius: 12px 12px 0 0;
+        width: 100%;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        max-height: 55vh;
+        z-index: 50;
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.25);
+        border-radius: 14px 14px 0 0;
       }
       body.sidebar-hidden aside { display: none; }
-      .viewer-wrap { flex: 0 0 auto; width: 100%; }
-      iframe { min-height: 300px; }
-      .conditions-panel { max-height: 30vh; flex-shrink: 0; }
-      .summary { max-height: 35vh; flex-shrink: 0; }
-      th, td { font-size: 0.72rem; padding: 4px 6px; }
+      .viewer-wrap { flex: 1; width: 100%; min-height: 0; }
+      iframe { min-height: 0; height: 100%; }
     }
   </style>
 </head>
-<body class="sidebar-hidden summary-hidden conditions-hidden">
+<body class="sidebar-hidden">
   <header>
-    <h1>시뮬레이션 대시보드</h1>
-    <span id="run-count">밀도 24 · 시뮬 10</span>
-    <div class="info-bar" id="info-bar"></div>
+    <div class="brand">
+      <h1>시뮬레이션 대시보드</h1>
+      <span id="run-count">질량 10 · 시뮬 10</span>
+    </div>
     <div class="toolbar">
       <div class="nav-controls" id="nav-controls">
-        <button type="button" id="btn-prev" title="이전">◀</button>
-        <select id="item-select" aria-label="항목 선택"></select>
-        <button type="button" id="btn-next" title="다음">▶</button>
+        <button type="button" id="btn-prev" title="이전" aria-label="이전">‹</button>
+        <span class="nav-current" id="nav-current" aria-live="polite"></span>
+        <button type="button" id="btn-next" title="다음" aria-label="다음">›</button>
       </div>
       <div class="view-tabs">
         <button type="button" data-view="prob">확률분포</button>
-        <button type="button" class="active" data-view="density">밀도분포</button>
-        <button type="button" data-view="compare">전체 비교</button>
+        <button type="button" class="active" data-view="density">질량분포</button>
+        <button type="button" data-view="compare">분포 비교</button>
       </div>
-      <button type="button" class="panel-toggle" id="toggle-conditions" title="조건 설명">ℹ 조건</button>
+      <button type="button" class="export-btn" id="btn-export-group" title="변인 통제 v2 전체 질량·확률 PNG를 ZIP으로 저장">묶음 PNG</button>
       <button type="button" class="panel-toggle" id="toggle-sidebar" title="목록">☰ 목록</button>
-      <button type="button" class="panel-toggle" id="toggle-summary" title="비교 표">⊞ 표</button>
     </div>
   </header>
   <div class="layout">
     <aside id="sidebar"><ul class="run-list" id="run-list"></ul></aside>
     <main>
-      <div class="viewer-wrap"><iframe id="viewer" title="뷰어"></iframe></div>
-      <div class="conditions-panel" id="conditions-panel">
-        <h3>시뮬레이션 조건</h3>
-        <div id="conditions-body"></div>
-      </div>
-      <div class="summary" id="summary-panel">
-        <div class="summary-wrap">
-        <table>
-          <thead><tr>
-            <th>실험</th><th>변인</th><th>항목</th><th>N</th>
-            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
-          </tr></thead>
-          <tbody id="summary-body"></tbody>
-        </table>
-        </div>
+      <div class="viewer-wrap">
+        <div class="viewer-loading" id="viewer-loading" aria-hidden="true">불러오는 중…</div>
+        <iframe id="viewer" title="뷰어"></iframe>
       </div>
     </main>
   </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
   <script>
-    const STUDIES = [{"id": "rho_scan", "label": "1단계 — ρ 스캔", "groups": [{"id": "factor", "label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "items": [{"item_id": "01_ctrl_factor_f20", "label": "ctrl_factor_f20", "display_label": "ρ=2 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "ctrl_factor_f20", "density_url": "studies/rho_scan/density_previews/01_ctrl_factor_f20.html", "prob_url": null, "kind": "preview", "rho_name": "ctrl_factor_f20"}, {"item_id": "02_ctrl_factor_f25", "label": "ctrl_factor_f25", "display_label": "ρ=2.5 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "ctrl_factor_f25", "density_url": "studies/rho_scan/density_previews/02_ctrl_factor_f25.html", "prob_url": null, "kind": "preview", "rho_name": "ctrl_factor_f25"}, {"item_id": "03_ctrl_factor_f30", "label": "ctrl_factor_f30", "display_label": "ρ=3 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "ctrl_factor_f30", "density_url": "studies/rho_scan/density_previews/03_ctrl_factor_f30.html", "prob_url": null, "kind": "preview", "rho_name": "ctrl_factor_f30"}, {"item_id": "04_ctrl_factor_f35", "label": "ctrl_factor_f35", "display_label": "ρ=3.5 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "ctrl_factor_f35", "density_url": "studies/rho_scan/density_previews/04_ctrl_factor_f35.html", "prob_url": null, "kind": "preview", "rho_name": "ctrl_factor_f35"}, {"item_id": "05_ctrl_factor_f40", "label": "ctrl_factor_f40", "display_label": "ρ=4 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "ctrl_factor_f40", "density_url": "studies/rho_scan/density_previews/05_ctrl_factor_f40.html", "prob_url": null, "kind": "preview", "rho_name": "ctrl_factor_f40"}, {"item_id": "06_ctrl_factor_f50", "label": "ctrl_factor_f50", "display_label": "ρ=5 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "ctrl_factor_f50", "density_url": "studies/rho_scan/density_previews/06_ctrl_factor_f50.html", "prob_url": null, "kind": "preview", "rho_name": "ctrl_factor_f50"}, {"item_id": "07_ctrl_factor_f60", "label": "ctrl_factor_f60", "display_label": "ρ=6 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "ctrl_factor_f60", "density_url": "studies/rho_scan/density_previews/07_ctrl_factor_f60.html", "prob_url": null, "kind": "preview", "rho_name": "ctrl_factor_f60"}]}]}, {"id": "controlled", "label": "변인 통제 v2", "groups": [{"id": "uniform", "label": "기준선 — 균일 밀도 ρ=1", "items": [{"item_id": "20260613_111728_uniform", "label": "uniform", "display_label": "ρ=1 (균일)", "title": "20260613_111728_uniform", "density_url": "runs/20260613_111728_uniform/rho_density.html", "prob_url": "runs/20260613_111728_uniform/face_probabilities.html", "kind": "simulation", "run_id": "20260613_111728_uniform", "rho_name": "uniform", "n_trials": 100000, "probabilities": {"1": 0.16739, "2": 0.16659, "3": 0.16533, "4": 0.16821, "5": 0.16568, "6": 0.1668}, "cancelled": false, "timestamp": "2026-06-13T04:39:37.352330+00:00", "study_id": "controlled", "variable_group": null, "target_trials": null, "top_face": "4", "top_p": 0.16821}]}, {"id": "factor", "label": "변인: ρ · 편심x좌표=0.28, 반지름=0.2 일정", "items": [{"item_id": "20260613_112628_ctrl_factor_f30", "label": "ctrl_factor_f30", "display_label": "ρ=3 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "20260613_112628_ctrl_factor_f30", "density_url": "runs/20260613_112628_ctrl_factor_f30/rho_density.html", "prob_url": "runs/20260613_112628_ctrl_factor_f30/face_probabilities.html", "kind": "simulation", "run_id": "20260613_112628_ctrl_factor_f30", "rho_name": "ctrl_factor_f30", "n_trials": 100000, "probabilities": {"1": 0.16701, "2": 0.17341, "3": 0.16668, "4": 0.167, "5": 0.16021, "6": 0.16569}, "cancelled": false, "timestamp": "2026-06-13T04:39:38.019662+00:00", "study_id": "controlled", "variable_group": null, "target_trials": null, "top_face": "2", "top_p": 0.17341}, {"item_id": "20260613_113527_ctrl_factor_f40", "label": "ctrl_factor_f40", "display_label": "ρ=4 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "20260613_113527_ctrl_factor_f40", "density_url": "runs/20260613_113527_ctrl_factor_f40/rho_density.html", "prob_url": "runs/20260613_113527_ctrl_factor_f40/face_probabilities.html", "kind": "simulation", "run_id": "20260613_113527_ctrl_factor_f40", "rho_name": "ctrl_factor_f40", "n_trials": 100000, "probabilities": {"1": 0.16611, "2": 0.15843, "3": 0.16585, "4": 0.16686, "5": 0.1763, "6": 0.16645}, "cancelled": false, "timestamp": "2026-06-13T04:39:38.552552+00:00", "study_id": "controlled", "variable_group": null, "target_trials": null, "top_face": "5", "top_p": 0.1763}, {"item_id": "20260613_114424_ctrl_factor_f50", "label": "ctrl_factor_f50", "display_label": "ρ=5 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "20260613_114424_ctrl_factor_f50", "density_url": "runs/20260613_114424_ctrl_factor_f50/rho_density.html", "prob_url": "runs/20260613_114424_ctrl_factor_f50/face_probabilities.html", "kind": "simulation", "run_id": "20260613_114424_ctrl_factor_f50", "rho_name": "ctrl_factor_f50", "n_trials": 100000, "probabilities": {"1": 0.16656, "2": 0.15571, "3": 0.16851, "4": 0.16686, "5": 0.17875, "6": 0.16361}, "cancelled": false, "timestamp": "2026-06-13T04:39:39.070654+00:00", "study_id": "controlled", "variable_group": null, "target_trials": null, "top_face": "5", "top_p": 0.17875}]}, {"id": "radius", "label": "변인: 반지름 · 편심x좌표=0.28, ρ=4 일정", "items": [{"item_id": "20260613_115320_ctrl_radius_r16", "label": "ctrl_radius_r16", "display_label": "반지름=0.16 (편심x좌표=0.28, ρ=4 일정)", "title": "20260613_115320_ctrl_radius_r16", "density_url": "runs/20260613_115320_ctrl_radius_r16/rho_density.html", "prob_url": "runs/20260613_115320_ctrl_radius_r16/face_probabilities.html", "kind": "simulation", "run_id": "20260613_115320_ctrl_radius_r16", "rho_name": "ctrl_radius_r16", "n_trials": 100000, "probabilities": {"1": 0.16436, "2": 0.16388, "3": 0.16667, "4": 0.1656, "5": 0.17125, "6": 0.16824}, "cancelled": false, "timestamp": "2026-06-13T04:39:39.640818+00:00", "study_id": "controlled", "variable_group": null, "target_trials": null, "top_face": "5", "top_p": 0.17125}, {"item_id": "20260613_120217_ctrl_radius_r20", "label": "ctrl_radius_r20", "display_label": "반지름=0.2 (편심x좌표=0.28, ρ=4 일정)", "title": "20260613_120217_ctrl_radius_r20", "density_url": "runs/20260613_120217_ctrl_radius_r20/rho_density.html", "prob_url": "runs/20260613_120217_ctrl_radius_r20/face_probabilities.html", "kind": "simulation", "run_id": "20260613_120217_ctrl_radius_r20", "rho_name": "ctrl_radius_r20", "n_trials": 100000, "probabilities": {"1": 0.16598, "2": 0.16034, "3": 0.16509, "4": 0.16673, "5": 0.17611, "6": 0.16575}, "cancelled": false, "timestamp": "2026-06-13T04:39:40.172500+00:00", "study_id": "controlled", "variable_group": null, "target_trials": null, "top_face": "5", "top_p": 0.17611}, {"item_id": "20260613_121115_ctrl_radius_r22", "label": "ctrl_radius_r22", "display_label": "반지름=0.22 (편심x좌표=0.28, ρ=4 일정)", "title": "20260613_121115_ctrl_radius_r22", "density_url": "runs/20260613_121115_ctrl_radius_r22/rho_density.html", "prob_url": "runs/20260613_121115_ctrl_radius_r22/face_probabilities.html", "kind": "simulation", "run_id": "20260613_121115_ctrl_radius_r22", "rho_name": "ctrl_radius_r22", "n_trials": 100000, "probabilities": {"1": 0.16517, "2": 0.17743, "3": 0.16739, "4": 0.16693, "5": 0.15757, "6": 0.16551}, "cancelled": false, "timestamp": "2026-06-13T04:39:40.689036+00:00", "study_id": "controlled", "variable_group": null, "target_trials": null, "top_face": "2", "top_p": 0.17743}]}, {"id": "center", "label": "변인: 편심x좌표 · 반지름=0.18, ρ=4 일정", "items": [{"item_id": "20260613_122013_ctrl_center_x22", "label": "ctrl_center_x22", "display_label": "편심x좌표=0.22 (반지름=0.18, ρ=4 일정)", "title": "20260613_122013_ctrl_center_x22", "density_url": "runs/20260613_122013_ctrl_center_x22/rho_density.html", "prob_url": "runs/20260613_122013_ctrl_center_x22/face_probabilities.html", "kind": "simulation", "run_id": "20260613_122013_ctrl_center_x22", "rho_name": "ctrl_center_x22", "n_trials": 100000, "probabilities": {"1": 0.1673, "2": 0.16399, "3": 0.16607, "4": 0.1649, "5": 0.17344, "6": 0.1643}, "cancelled": false, "timestamp": "2026-06-13T04:39:41.189479+00:00", "study_id": "controlled", "variable_group": null, "target_trials": null, "top_face": "5", "top_p": 0.17344}, {"item_id": "20260613_122908_ctrl_center_x28", "label": "ctrl_center_x28", "display_label": "편심x좌표=0.28 (반지름=0.18, ρ=4 일정)", "title": "20260613_122908_ctrl_center_x28", "density_url": "runs/20260613_122908_ctrl_center_x28/rho_density.html", "prob_url": "runs/20260613_122908_ctrl_center_x28/face_probabilities.html", "kind": "simulation", "run_id": "20260613_122908_ctrl_center_x28", "rho_name": "ctrl_center_x28", "n_trials": 100000, "probabilities": {"1": 0.16624, "2": 0.15987, "3": 0.1662, "4": 0.16734, "5": 0.17415, "6": 0.1662}, "cancelled": false, "timestamp": "2026-06-13T04:39:41.723233+00:00", "study_id": "controlled", "variable_group": null, "target_trials": null, "top_face": "5", "top_p": 0.17415}, {"item_id": "20260613_123804_ctrl_center_x32", "label": "ctrl_center_x32", "display_label": "편심x좌표=0.32 (반지름=0.18, ρ=4 일정)", "title": "20260613_123804_ctrl_center_x32", "density_url": "runs/20260613_123804_ctrl_center_x32/rho_density.html", "prob_url": "runs/20260613_123804_ctrl_center_x32/face_probabilities.html", "kind": "simulation", "run_id": "20260613_123804_ctrl_center_x32", "rho_name": "ctrl_center_x32", "n_trials": 100000, "probabilities": {"1": 0.16628, "2": 0.15776, "3": 0.16595, "4": 0.16774, "5": 0.17758, "6": 0.16469}, "cancelled": false, "timestamp": "2026-06-13T04:39:42.223927+00:00", "study_id": "controlled", "variable_group": null, "target_trials": null, "top_face": "5", "top_p": 0.17758}]}]}, {"id": "sphere_legacy", "label": "구 밀도 실험", "groups": [{"id": "legacy", "label": "구 밀도 실험 전체", "items": [{"item_id": "01_uniform", "label": "uniform", "display_label": "ρ=1 (균일)", "title": "uniform", "density_url": "studies/sphere_legacy/density_previews/01_uniform.html", "prob_url": null, "kind": "preview", "rho_name": "uniform"}, {"item_id": "02_sphere_r02_f13", "label": "sphere_r02_f13", "display_label": "sphere_r02_f13", "title": "sphere_r02_f13", "density_url": "studies/sphere_legacy/density_previews/02_sphere_r02_f13.html", "prob_url": null, "kind": "preview", "rho_name": "sphere_r02_f13"}, {"item_id": "03_sphere_r02_f16", "label": "sphere_r02_f16", "display_label": "sphere_r02_f16", "title": "sphere_r02_f16", "density_url": "studies/sphere_legacy/density_previews/03_sphere_r02_f16.html", "prob_url": null, "kind": "preview", "rho_name": "sphere_r02_f16"}, {"item_id": "04_sphere_r02_f19", "label": "sphere_r02_f19", "display_label": "sphere_r02_f19", "title": "sphere_r02_f19", "density_url": "studies/sphere_legacy/density_previews/04_sphere_r02_f19.html", "prob_url": null, "kind": "preview", "rho_name": "sphere_r02_f19"}, {"item_id": "05_sphere_r03_f13", "label": "sphere_r03_f13", "display_label": "sphere_r03_f13", "title": "sphere_r03_f13", "density_url": "studies/sphere_legacy/density_previews/05_sphere_r03_f13.html", "prob_url": null, "kind": "preview", "rho_name": "sphere_r03_f13"}, {"item_id": "06_sphere_r03_f16", "label": "sphere_r03_f16", "display_label": "sphere_r03_f16", "title": "sphere_r03_f16", "density_url": "studies/sphere_legacy/density_previews/06_sphere_r03_f16.html", "prob_url": null, "kind": "preview", "rho_name": "sphere_r03_f16"}, {"item_id": "07_sphere_r03_f19", "label": "sphere_r03_f19", "display_label": "sphere_r03_f19", "title": "sphere_r03_f19", "density_url": "studies/sphere_legacy/density_previews/07_sphere_r03_f19.html", "prob_url": null, "kind": "preview", "rho_name": "sphere_r03_f19"}]}]}];
-    const ITEMS = [{"item_id": "01_ctrl_factor_f20", "label": "ctrl_factor_f20", "display_label": "ρ=2 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "ctrl_factor_f20", "density_url": "studies/rho_scan/density_previews/01_ctrl_factor_f20.html", "prob_url": null, "kind": "preview", "rho_name": "ctrl_factor_f20", "study_id": "rho_scan", "study_label": "1단계 — ρ 스캔", "variable_group": "factor", "variable_group_label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "group_id": "rho_scan_factor", "group_label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "conditions": {"summary": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정 · 1단계 — ρ 스캔 · ctrl_factor_f20", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.28, 0, 0), 반지름=0.2, 구 안 ρ=2, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.28)", "변인 통제 A(밀도): 편심 x좌표=0.28, 반지름=0.2 고정, 구 안 ρ=2 만 변경 (구 밖 ρ=1)", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 항목", "lines": ["유형: 설계 단계 밀도 미리보기 (시뮬 전)", "확률분포 탭 없음 — 밀도분포 HTML만 존재"]}]}}, {"item_id": "02_ctrl_factor_f25", "label": "ctrl_factor_f25", "display_label": "ρ=2.5 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "ctrl_factor_f25", "density_url": "studies/rho_scan/density_previews/02_ctrl_factor_f25.html", "prob_url": null, "kind": "preview", "rho_name": "ctrl_factor_f25", "study_id": "rho_scan", "study_label": "1단계 — ρ 스캔", "variable_group": "factor", "variable_group_label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "group_id": "rho_scan_factor", "group_label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "conditions": {"summary": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정 · 1단계 — ρ 스캔 · ctrl_factor_f25", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.28, 0, 0), 반지름=0.2, 구 안 ρ=2.5, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.28)", "변인 통제 A(밀도): 편심 x좌표=0.28, 반지름=0.2 고정, 구 안 ρ=2.5 만 변경 (구 밖 ρ=1)", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 항목", "lines": ["유형: 설계 단계 밀도 미리보기 (시뮬 전)", "확률분포 탭 없음 — 밀도분포 HTML만 존재"]}]}}, {"item_id": "03_ctrl_factor_f30", "label": "ctrl_factor_f30", "display_label": "ρ=3 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "ctrl_factor_f30", "density_url": "studies/rho_scan/density_previews/03_ctrl_factor_f30.html", "prob_url": null, "kind": "preview", "rho_name": "ctrl_factor_f30", "study_id": "rho_scan", "study_label": "1단계 — ρ 스캔", "variable_group": "factor", "variable_group_label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "group_id": "rho_scan_factor", "group_label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "conditions": {"summary": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정 · 1단계 — ρ 스캔 · ctrl_factor_f30", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.28, 0, 0), 반지름=0.2, 구 안 ρ=3, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.28)", "변인 통제 A(밀도): 편심 x좌표=0.28, 반지름=0.2 고정, 구 안 ρ=3 만 변경 (구 밖 ρ=1)", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 항목", "lines": ["유형: 설계 단계 밀도 미리보기 (시뮬 전)", "확률분포 탭 없음 — 밀도분포 HTML만 존재"]}]}}, {"item_id": "04_ctrl_factor_f35", "label": "ctrl_factor_f35", "display_label": "ρ=3.5 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "ctrl_factor_f35", "density_url": "studies/rho_scan/density_previews/04_ctrl_factor_f35.html", "prob_url": null, "kind": "preview", "rho_name": "ctrl_factor_f35", "study_id": "rho_scan", "study_label": "1단계 — ρ 스캔", "variable_group": "factor", "variable_group_label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "group_id": "rho_scan_factor", "group_label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "conditions": {"summary": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정 · 1단계 — ρ 스캔 · ctrl_factor_f35", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.28, 0, 0), 반지름=0.2, 구 안 ρ=3.5, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.28)", "변인 통제 A(밀도): 편심 x좌표=0.28, 반지름=0.2 고정, 구 안 ρ=3.5 만 변경 (구 밖 ρ=1)", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 항목", "lines": ["유형: 설계 단계 밀도 미리보기 (시뮬 전)", "확률분포 탭 없음 — 밀도분포 HTML만 존재"]}]}}, {"item_id": "05_ctrl_factor_f40", "label": "ctrl_factor_f40", "display_label": "ρ=4 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "ctrl_factor_f40", "density_url": "studies/rho_scan/density_previews/05_ctrl_factor_f40.html", "prob_url": null, "kind": "preview", "rho_name": "ctrl_factor_f40", "study_id": "rho_scan", "study_label": "1단계 — ρ 스캔", "variable_group": "factor", "variable_group_label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "group_id": "rho_scan_factor", "group_label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "conditions": {"summary": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정 · 1단계 — ρ 스캔 · ctrl_factor_f40", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.28, 0, 0), 반지름=0.2, 구 안 ρ=4, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.28)", "변인 통제 A(밀도): 편심 x좌표=0.28, 반지름=0.2 고정, 구 안 ρ=4 만 변경 (구 밖 ρ=1)", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 항목", "lines": ["유형: 설계 단계 밀도 미리보기 (시뮬 전)", "확률분포 탭 없음 — 밀도분포 HTML만 존재"]}]}}, {"item_id": "06_ctrl_factor_f50", "label": "ctrl_factor_f50", "display_label": "ρ=5 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "ctrl_factor_f50", "density_url": "studies/rho_scan/density_previews/06_ctrl_factor_f50.html", "prob_url": null, "kind": "preview", "rho_name": "ctrl_factor_f50", "study_id": "rho_scan", "study_label": "1단계 — ρ 스캔", "variable_group": "factor", "variable_group_label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "group_id": "rho_scan_factor", "group_label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "conditions": {"summary": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정 · 1단계 — ρ 스캔 · ctrl_factor_f50", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.28, 0, 0), 반지름=0.2, 구 안 ρ=5, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.28)", "변인 통제 A(밀도): 편심 x좌표=0.28, 반지름=0.2 고정, 구 안 ρ=5 만 변경 (구 밖 ρ=1)", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 항목", "lines": ["유형: 설계 단계 밀도 미리보기 (시뮬 전)", "확률분포 탭 없음 — 밀도분포 HTML만 존재"]}]}}, {"item_id": "07_ctrl_factor_f60", "label": "ctrl_factor_f60", "display_label": "ρ=6 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "ctrl_factor_f60", "density_url": "studies/rho_scan/density_previews/07_ctrl_factor_f60.html", "prob_url": null, "kind": "preview", "rho_name": "ctrl_factor_f60", "study_id": "rho_scan", "study_label": "1단계 — ρ 스캔", "variable_group": "factor", "variable_group_label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "group_id": "rho_scan_factor", "group_label": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정", "conditions": {"summary": "1단계 — ρ 스캔 · 편심x좌표=0.28, 반지름=0.2 일정 · 1단계 — ρ 스캔 · ctrl_factor_f60", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.28, 0, 0), 반지름=0.2, 구 안 ρ=6, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.28)", "변인 통제 A(밀도): 편심 x좌표=0.28, 반지름=0.2 고정, 구 안 ρ=6 만 변경 (구 밖 ρ=1)", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 항목", "lines": ["유형: 설계 단계 밀도 미리보기 (시뮬 전)", "확률분포 탭 없음 — 밀도분포 HTML만 존재"]}]}}, {"item_id": "20260613_111728_uniform", "label": "uniform", "display_label": "ρ=1 (균일)", "title": "20260613_111728_uniform", "density_url": "runs/20260613_111728_uniform/rho_density.html", "prob_url": "runs/20260613_111728_uniform/face_probabilities.html", "kind": "simulation", "run_id": "20260613_111728_uniform", "rho_name": "uniform", "n_trials": 100000, "probabilities": {"1": 0.16739, "2": 0.16659, "3": 0.16533, "4": 0.16821, "5": 0.16568, "6": 0.1668}, "cancelled": false, "timestamp": "2026-06-13T04:39:37.352330+00:00", "study_id": "controlled", "variable_group": "uniform", "target_trials": null, "top_face": "4", "top_p": 0.16821, "study_label": "변인 통제 v2", "variable_group_label": "기준선 — 균일 밀도 ρ=1", "group_id": "controlled_uniform", "group_label": "기준선 — 균일 밀도 ρ=1", "conditions": {"summary": "기준선 — 균일 밀도 ρ=1 · 변인 통제 v2 · uniform · N=100,000", "sections": [{"title": "밀도 조건", "lines": ["밀도: 모든 위치 ρ = 1 (균일, 공정 주사위 기준선)", "무게중심 ≈ 기하 중심, 관성 ≈ 대칭"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 시뮬레이션 실행", "lines": ["실행 ID: 20260613_111728_uniform", "저장 시각: 2026-06-13 04:39:37", "시행 횟수 (몬테카를로): 100,000회", "실험 묶음: 변인 통제 v2", "변인 그룹: 기준선 — 균일 밀도 ρ=1", "이 실행 최다 바닥 면: 눈 4 (16.82%)"]}]}}, {"item_id": "20260613_112628_ctrl_factor_f30", "label": "ctrl_factor_f30", "display_label": "ρ=3 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "20260613_112628_ctrl_factor_f30", "density_url": "runs/20260613_112628_ctrl_factor_f30/rho_density.html", "prob_url": "runs/20260613_112628_ctrl_factor_f30/face_probabilities.html", "kind": "simulation", "run_id": "20260613_112628_ctrl_factor_f30", "rho_name": "ctrl_factor_f30", "n_trials": 100000, "probabilities": {"1": 0.16701, "2": 0.17341, "3": 0.16668, "4": 0.167, "5": 0.16021, "6": 0.16569}, "cancelled": false, "timestamp": "2026-06-13T04:39:38.019662+00:00", "study_id": "controlled", "variable_group": "factor", "target_trials": null, "top_face": "2", "top_p": 0.17341, "study_label": "변인 통제 v2", "variable_group_label": "변인: ρ · 편심x좌표=0.28, 반지름=0.2 일정", "group_id": "controlled_factor", "group_label": "변인: ρ · 편심x좌표=0.28, 반지름=0.2 일정", "conditions": {"summary": "변인: ρ · 편심x좌표=0.28, 반지름=0.2 일정 · 변인 통제 v2 · ctrl_factor_f30 · N=100,000", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.28, 0, 0), 반지름=0.2, 구 안 ρ=3, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.28)", "변인 통제 A(밀도): 편심 x좌표=0.28, 반지름=0.2 고정, 구 안 ρ=3 만 변경 (구 밖 ρ=1)", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 시뮬레이션 실행", "lines": ["실행 ID: 20260613_112628_ctrl_factor_f30", "저장 시각: 2026-06-13 04:39:38", "시행 횟수 (몬테카를로): 100,000회", "실험 묶음: 변인 통제 v2", "변인 그룹: 변인: ρ · 편심x좌표=0.28, 반지름=0.2 일정", "이 실행 최다 바닥 면: 눈 2 (17.34%)"]}]}}, {"item_id": "20260613_113527_ctrl_factor_f40", "label": "ctrl_factor_f40", "display_label": "ρ=4 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "20260613_113527_ctrl_factor_f40", "density_url": "runs/20260613_113527_ctrl_factor_f40/rho_density.html", "prob_url": "runs/20260613_113527_ctrl_factor_f40/face_probabilities.html", "kind": "simulation", "run_id": "20260613_113527_ctrl_factor_f40", "rho_name": "ctrl_factor_f40", "n_trials": 100000, "probabilities": {"1": 0.16611, "2": 0.15843, "3": 0.16585, "4": 0.16686, "5": 0.1763, "6": 0.16645}, "cancelled": false, "timestamp": "2026-06-13T04:39:38.552552+00:00", "study_id": "controlled", "variable_group": "factor", "target_trials": null, "top_face": "5", "top_p": 0.1763, "study_label": "변인 통제 v2", "variable_group_label": "변인: ρ · 편심x좌표=0.28, 반지름=0.2 일정", "group_id": "controlled_factor", "group_label": "변인: ρ · 편심x좌표=0.28, 반지름=0.2 일정", "conditions": {"summary": "변인: ρ · 편심x좌표=0.28, 반지름=0.2 일정 · 변인 통제 v2 · ctrl_factor_f40 · N=100,000", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.28, 0, 0), 반지름=0.2, 구 안 ρ=4, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.28)", "변인 통제 A(밀도): 편심 x좌표=0.28, 반지름=0.2 고정, 구 안 ρ=4 만 변경 (구 밖 ρ=1)", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 시뮬레이션 실행", "lines": ["실행 ID: 20260613_113527_ctrl_factor_f40", "저장 시각: 2026-06-13 04:39:38", "시행 횟수 (몬테카를로): 100,000회", "실험 묶음: 변인 통제 v2", "변인 그룹: 변인: ρ · 편심x좌표=0.28, 반지름=0.2 일정", "이 실행 최다 바닥 면: 눈 5 (17.63%)"]}]}}, {"item_id": "20260613_114424_ctrl_factor_f50", "label": "ctrl_factor_f50", "display_label": "ρ=5 (편심x좌표=0.28, 반지름=0.2 일정)", "title": "20260613_114424_ctrl_factor_f50", "density_url": "runs/20260613_114424_ctrl_factor_f50/rho_density.html", "prob_url": "runs/20260613_114424_ctrl_factor_f50/face_probabilities.html", "kind": "simulation", "run_id": "20260613_114424_ctrl_factor_f50", "rho_name": "ctrl_factor_f50", "n_trials": 100000, "probabilities": {"1": 0.16656, "2": 0.15571, "3": 0.16851, "4": 0.16686, "5": 0.17875, "6": 0.16361}, "cancelled": false, "timestamp": "2026-06-13T04:39:39.070654+00:00", "study_id": "controlled", "variable_group": "factor", "target_trials": null, "top_face": "5", "top_p": 0.17875, "study_label": "변인 통제 v2", "variable_group_label": "변인: ρ · 편심x좌표=0.28, 반지름=0.2 일정", "group_id": "controlled_factor", "group_label": "변인: ρ · 편심x좌표=0.28, 반지름=0.2 일정", "conditions": {"summary": "변인: ρ · 편심x좌표=0.28, 반지름=0.2 일정 · 변인 통제 v2 · ctrl_factor_f50 · N=100,000", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.28, 0, 0), 반지름=0.2, 구 안 ρ=5, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.28)", "변인 통제 A(밀도): 편심 x좌표=0.28, 반지름=0.2 고정, 구 안 ρ=5 만 변경 (구 밖 ρ=1)", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 시뮬레이션 실행", "lines": ["실행 ID: 20260613_114424_ctrl_factor_f50", "저장 시각: 2026-06-13 04:39:39", "시행 횟수 (몬테카를로): 100,000회", "실험 묶음: 변인 통제 v2", "변인 그룹: 변인: ρ · 편심x좌표=0.28, 반지름=0.2 일정", "이 실행 최다 바닥 면: 눈 5 (17.88%)"]}]}}, {"item_id": "20260613_115320_ctrl_radius_r16", "label": "ctrl_radius_r16", "display_label": "반지름=0.16 (편심x좌표=0.28, ρ=4 일정)", "title": "20260613_115320_ctrl_radius_r16", "density_url": "runs/20260613_115320_ctrl_radius_r16/rho_density.html", "prob_url": "runs/20260613_115320_ctrl_radius_r16/face_probabilities.html", "kind": "simulation", "run_id": "20260613_115320_ctrl_radius_r16", "rho_name": "ctrl_radius_r16", "n_trials": 100000, "probabilities": {"1": 0.16436, "2": 0.16388, "3": 0.16667, "4": 0.1656, "5": 0.17125, "6": 0.16824}, "cancelled": false, "timestamp": "2026-06-13T04:39:39.640818+00:00", "study_id": "controlled", "variable_group": "radius", "target_trials": null, "top_face": "5", "top_p": 0.17125, "study_label": "변인 통제 v2", "variable_group_label": "변인: 반지름 · 편심x좌표=0.28, ρ=4 일정", "group_id": "controlled_radius", "group_label": "변인: 반지름 · 편심x좌표=0.28, ρ=4 일정", "conditions": {"summary": "변인: 반지름 · 편심x좌표=0.28, ρ=4 일정 · 변인 통제 v2 · ctrl_radius_r16 · N=100,000", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.28, 0, 0), 반지름=0.16, 구 안 ρ=4, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.28)", "변인 통제 B(반지름): 편심 x좌표=0.28, 구 안 ρ=4 고정, 반지름=0.16 만 변경", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 시뮬레이션 실행", "lines": ["실행 ID: 20260613_115320_ctrl_radius_r16", "저장 시각: 2026-06-13 04:39:39", "시행 횟수 (몬테카를로): 100,000회", "실험 묶음: 변인 통제 v2", "변인 그룹: 변인: 반지름 · 편심x좌표=0.28, ρ=4 일정", "이 실행 최다 바닥 면: 눈 5 (17.12%)"]}]}}, {"item_id": "20260613_120217_ctrl_radius_r20", "label": "ctrl_radius_r20", "display_label": "반지름=0.2 (편심x좌표=0.28, ρ=4 일정)", "title": "20260613_120217_ctrl_radius_r20", "density_url": "runs/20260613_120217_ctrl_radius_r20/rho_density.html", "prob_url": "runs/20260613_120217_ctrl_radius_r20/face_probabilities.html", "kind": "simulation", "run_id": "20260613_120217_ctrl_radius_r20", "rho_name": "ctrl_radius_r20", "n_trials": 100000, "probabilities": {"1": 0.16598, "2": 0.16034, "3": 0.16509, "4": 0.16673, "5": 0.17611, "6": 0.16575}, "cancelled": false, "timestamp": "2026-06-13T04:39:40.172500+00:00", "study_id": "controlled", "variable_group": "radius", "target_trials": null, "top_face": "5", "top_p": 0.17611, "study_label": "변인 통제 v2", "variable_group_label": "변인: 반지름 · 편심x좌표=0.28, ρ=4 일정", "group_id": "controlled_radius", "group_label": "변인: 반지름 · 편심x좌표=0.28, ρ=4 일정", "conditions": {"summary": "변인: 반지름 · 편심x좌표=0.28, ρ=4 일정 · 변인 통제 v2 · ctrl_radius_r20 · N=100,000", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.28, 0, 0), 반지름=0.2, 구 안 ρ=4, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.28)", "변인 통제 B(반지름): 편심 x좌표=0.28, 구 안 ρ=4 고정, 반지름=0.2 만 변경", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 시뮬레이션 실행", "lines": ["실행 ID: 20260613_120217_ctrl_radius_r20", "저장 시각: 2026-06-13 04:39:40", "시행 횟수 (몬테카를로): 100,000회", "실험 묶음: 변인 통제 v2", "변인 그룹: 변인: 반지름 · 편심x좌표=0.28, ρ=4 일정", "이 실행 최다 바닥 면: 눈 5 (17.61%)"]}]}}, {"item_id": "20260613_121115_ctrl_radius_r22", "label": "ctrl_radius_r22", "display_label": "반지름=0.22 (편심x좌표=0.28, ρ=4 일정)", "title": "20260613_121115_ctrl_radius_r22", "density_url": "runs/20260613_121115_ctrl_radius_r22/rho_density.html", "prob_url": "runs/20260613_121115_ctrl_radius_r22/face_probabilities.html", "kind": "simulation", "run_id": "20260613_121115_ctrl_radius_r22", "rho_name": "ctrl_radius_r22", "n_trials": 100000, "probabilities": {"1": 0.16517, "2": 0.17743, "3": 0.16739, "4": 0.16693, "5": 0.15757, "6": 0.16551}, "cancelled": false, "timestamp": "2026-06-13T04:39:40.689036+00:00", "study_id": "controlled", "variable_group": "radius", "target_trials": null, "top_face": "2", "top_p": 0.17743, "study_label": "변인 통제 v2", "variable_group_label": "변인: 반지름 · 편심x좌표=0.28, ρ=4 일정", "group_id": "controlled_radius", "group_label": "변인: 반지름 · 편심x좌표=0.28, ρ=4 일정", "conditions": {"summary": "변인: 반지름 · 편심x좌표=0.28, ρ=4 일정 · 변인 통제 v2 · ctrl_radius_r22 · N=100,000", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.28, 0, 0), 반지름=0.22, 구 안 ρ=4, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.28)", "변인 통제 B(반지름): 편심 x좌표=0.28, 구 안 ρ=4 고정, 반지름=0.22 만 변경", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 시뮬레이션 실행", "lines": ["실행 ID: 20260613_121115_ctrl_radius_r22", "저장 시각: 2026-06-13 04:39:40", "시행 횟수 (몬테카를로): 100,000회", "실험 묶음: 변인 통제 v2", "변인 그룹: 변인: 반지름 · 편심x좌표=0.28, ρ=4 일정", "이 실행 최다 바닥 면: 눈 2 (17.74%)"]}]}}, {"item_id": "20260613_122013_ctrl_center_x22", "label": "ctrl_center_x22", "display_label": "편심x좌표=0.22 (반지름=0.18, ρ=4 일정)", "title": "20260613_122013_ctrl_center_x22", "density_url": "runs/20260613_122013_ctrl_center_x22/rho_density.html", "prob_url": "runs/20260613_122013_ctrl_center_x22/face_probabilities.html", "kind": "simulation", "run_id": "20260613_122013_ctrl_center_x22", "rho_name": "ctrl_center_x22", "n_trials": 100000, "probabilities": {"1": 0.1673, "2": 0.16399, "3": 0.16607, "4": 0.1649, "5": 0.17344, "6": 0.1643}, "cancelled": false, "timestamp": "2026-06-13T04:39:41.189479+00:00", "study_id": "controlled", "variable_group": "center", "target_trials": null, "top_face": "5", "top_p": 0.17344, "study_label": "변인 통제 v2", "variable_group_label": "변인: 편심x좌표 · 반지름=0.18, ρ=4 일정", "group_id": "controlled_center", "group_label": "변인: 편심x좌표 · 반지름=0.18, ρ=4 일정", "conditions": {"summary": "변인: 편심x좌표 · 반지름=0.18, ρ=4 일정 · 변인 통제 v2 · ctrl_center_x22 · N=100,000", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.22, 0, 0), 반지름=0.18, 구 안 ρ=4, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.22)", "변인 통제 C(중심): 반지름=0.18, 구 안 ρ=4 고정, 편심 x좌표=0.22 만 변경", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 시뮬레이션 실행", "lines": ["실행 ID: 20260613_122013_ctrl_center_x22", "저장 시각: 2026-06-13 04:39:41", "시행 횟수 (몬테카를로): 100,000회", "실험 묶음: 변인 통제 v2", "변인 그룹: 변인: 편심x좌표 · 반지름=0.18, ρ=4 일정", "이 실행 최다 바닥 면: 눈 5 (17.34%)"]}]}}, {"item_id": "20260613_122908_ctrl_center_x28", "label": "ctrl_center_x28", "display_label": "편심x좌표=0.28 (반지름=0.18, ρ=4 일정)", "title": "20260613_122908_ctrl_center_x28", "density_url": "runs/20260613_122908_ctrl_center_x28/rho_density.html", "prob_url": "runs/20260613_122908_ctrl_center_x28/face_probabilities.html", "kind": "simulation", "run_id": "20260613_122908_ctrl_center_x28", "rho_name": "ctrl_center_x28", "n_trials": 100000, "probabilities": {"1": 0.16624, "2": 0.15987, "3": 0.1662, "4": 0.16734, "5": 0.17415, "6": 0.1662}, "cancelled": false, "timestamp": "2026-06-13T04:39:41.723233+00:00", "study_id": "controlled", "variable_group": "center", "target_trials": null, "top_face": "5", "top_p": 0.17415, "study_label": "변인 통제 v2", "variable_group_label": "변인: 편심x좌표 · 반지름=0.18, ρ=4 일정", "group_id": "controlled_center", "group_label": "변인: 편심x좌표 · 반지름=0.18, ρ=4 일정", "conditions": {"summary": "변인: 편심x좌표 · 반지름=0.18, ρ=4 일정 · 변인 통제 v2 · ctrl_center_x28 · N=100,000", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.28, 0, 0), 반지름=0.18, 구 안 ρ=4, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.28)", "변인 통제 C(중심): 반지름=0.18, 구 안 ρ=4 고정, 편심 x좌표=0.28 만 변경", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 시뮬레이션 실행", "lines": ["실행 ID: 20260613_122908_ctrl_center_x28", "저장 시각: 2026-06-13 04:39:41", "시행 횟수 (몬테카를로): 100,000회", "실험 묶음: 변인 통제 v2", "변인 그룹: 변인: 편심x좌표 · 반지름=0.18, ρ=4 일정", "이 실행 최다 바닥 면: 눈 5 (17.41%)"]}]}}, {"item_id": "20260613_123804_ctrl_center_x32", "label": "ctrl_center_x32", "display_label": "편심x좌표=0.32 (반지름=0.18, ρ=4 일정)", "title": "20260613_123804_ctrl_center_x32", "density_url": "runs/20260613_123804_ctrl_center_x32/rho_density.html", "prob_url": "runs/20260613_123804_ctrl_center_x32/face_probabilities.html", "kind": "simulation", "run_id": "20260613_123804_ctrl_center_x32", "rho_name": "ctrl_center_x32", "n_trials": 100000, "probabilities": {"1": 0.16628, "2": 0.15776, "3": 0.16595, "4": 0.16774, "5": 0.17758, "6": 0.16469}, "cancelled": false, "timestamp": "2026-06-13T04:39:42.223927+00:00", "study_id": "controlled", "variable_group": "center", "target_trials": null, "top_face": "5", "top_p": 0.17758, "study_label": "변인 통제 v2", "variable_group_label": "변인: 편심x좌표 · 반지름=0.18, ρ=4 일정", "group_id": "controlled_center", "group_label": "변인: 편심x좌표 · 반지름=0.18, ρ=4 일정", "conditions": {"summary": "변인: 편심x좌표 · 반지름=0.18, ρ=4 일정 · 변인 통제 v2 · ctrl_center_x32 · N=100,000", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.32, 0, 0), 반지름=0.18, 구 안 ρ=4, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.32)", "변인 통제 C(중심): 반지름=0.18, 구 안 ρ=4 고정, 편심 x좌표=0.32 만 변경", "실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 시뮬레이션 실행", "lines": ["실행 ID: 20260613_123804_ctrl_center_x32", "저장 시각: 2026-06-13 04:39:42", "시행 횟수 (몬테카를로): 100,000회", "실험 묶음: 변인 통제 v2", "변인 그룹: 변인: 편심x좌표 · 반지름=0.18, ρ=4 일정", "이 실행 최다 바닥 면: 눈 5 (17.76%)"]}]}}, {"item_id": "01_uniform", "label": "uniform", "display_label": "ρ=1 (균일)", "title": "uniform", "density_url": "studies/sphere_legacy/density_previews/01_uniform.html", "prob_url": null, "kind": "preview", "rho_name": "uniform", "study_id": "sphere_legacy", "study_label": "구 밀도 실험", "variable_group": "legacy", "variable_group_label": "구 밀도 실험 전체", "group_id": "sphere_legacy_legacy", "group_label": "구 밀도 실험 전체", "conditions": {"summary": "구 밀도 실험 전체 · 구 밀도 실험 · uniform", "sections": [{"title": "밀도 조건", "lines": ["밀도: 모든 위치 ρ = 1 (균일, 공정 주사위 기준선)", "무게중심 ≈ 기하 중심, 관성 ≈ 대칭"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 항목", "lines": ["유형: 설계 단계 밀도 미리보기 (시뮬 전)", "확률분포 탭 없음 — 밀도분포 HTML만 존재"]}]}}, {"item_id": "02_sphere_r02_f13", "label": "sphere_r02_f13", "display_label": "sphere_r02_f13", "title": "sphere_r02_f13", "density_url": "studies/sphere_legacy/density_previews/02_sphere_r02_f13.html", "prob_url": null, "kind": "preview", "rho_name": "sphere_r02_f13", "study_id": "sphere_legacy", "study_label": "구 밀도 실험", "variable_group": "legacy", "variable_group_label": "구 밀도 실험 전체", "group_id": "sphere_legacy_legacy", "group_label": "구 밀도 실험 전체", "conditions": {"summary": "구 밀도 실험 전체 · 구 밀도 실험 · sphere_r02_f13", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.15, 0, 0), 반지름=0.2, 구 안 ρ=1.3, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.15)", "실험 묶음: 구 밀도 실험 (sphere_legacy)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 항목", "lines": ["유형: 설계 단계 밀도 미리보기 (시뮬 전)", "확률분포 탭 없음 — 밀도분포 HTML만 존재"]}]}}, {"item_id": "03_sphere_r02_f16", "label": "sphere_r02_f16", "display_label": "sphere_r02_f16", "title": "sphere_r02_f16", "density_url": "studies/sphere_legacy/density_previews/03_sphere_r02_f16.html", "prob_url": null, "kind": "preview", "rho_name": "sphere_r02_f16", "study_id": "sphere_legacy", "study_label": "구 밀도 실험", "variable_group": "legacy", "variable_group_label": "구 밀도 실험 전체", "group_id": "sphere_legacy_legacy", "group_label": "구 밀도 실험 전체", "conditions": {"summary": "구 밀도 실험 전체 · 구 밀도 실험 · sphere_r02_f16", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.15, 0, 0), 반지름=0.2, 구 안 ρ=1.6, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.15)", "실험 묶음: 구 밀도 실험 (sphere_legacy)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 항목", "lines": ["유형: 설계 단계 밀도 미리보기 (시뮬 전)", "확률분포 탭 없음 — 밀도분포 HTML만 존재"]}]}}, {"item_id": "04_sphere_r02_f19", "label": "sphere_r02_f19", "display_label": "sphere_r02_f19", "title": "sphere_r02_f19", "density_url": "studies/sphere_legacy/density_previews/04_sphere_r02_f19.html", "prob_url": null, "kind": "preview", "rho_name": "sphere_r02_f19", "study_id": "sphere_legacy", "study_label": "구 밀도 실험", "variable_group": "legacy", "variable_group_label": "구 밀도 실험 전체", "group_id": "sphere_legacy_legacy", "group_label": "구 밀도 실험 전체", "conditions": {"summary": "구 밀도 실험 전체 · 구 밀도 실험 · sphere_r02_f19", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.15, 0, 0), 반지름=0.2, 구 안 ρ=1.9, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.15)", "실험 묶음: 구 밀도 실험 (sphere_legacy)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 항목", "lines": ["유형: 설계 단계 밀도 미리보기 (시뮬 전)", "확률분포 탭 없음 — 밀도분포 HTML만 존재"]}]}}, {"item_id": "05_sphere_r03_f13", "label": "sphere_r03_f13", "display_label": "sphere_r03_f13", "title": "sphere_r03_f13", "density_url": "studies/sphere_legacy/density_previews/05_sphere_r03_f13.html", "prob_url": null, "kind": "preview", "rho_name": "sphere_r03_f13", "study_id": "sphere_legacy", "study_label": "구 밀도 실험", "variable_group": "legacy", "variable_group_label": "구 밀도 실험 전체", "group_id": "sphere_legacy_legacy", "group_label": "구 밀도 실험 전체", "conditions": {"summary": "구 밀도 실험 전체 · 구 밀도 실험 · sphere_r03_f13", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.15, 0, 0), 반지름=0.3, 구 안 ρ=1.3, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.15)", "실험 묶음: 구 밀도 실험 (sphere_legacy)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 항목", "lines": ["유형: 설계 단계 밀도 미리보기 (시뮬 전)", "확률분포 탭 없음 — 밀도분포 HTML만 존재"]}]}}, {"item_id": "06_sphere_r03_f16", "label": "sphere_r03_f16", "display_label": "sphere_r03_f16", "title": "sphere_r03_f16", "density_url": "studies/sphere_legacy/density_previews/06_sphere_r03_f16.html", "prob_url": null, "kind": "preview", "rho_name": "sphere_r03_f16", "study_id": "sphere_legacy", "study_label": "구 밀도 실험", "variable_group": "legacy", "variable_group_label": "구 밀도 실험 전체", "group_id": "sphere_legacy_legacy", "group_label": "구 밀도 실험 전체", "conditions": {"summary": "구 밀도 실험 전체 · 구 밀도 실험 · sphere_r03_f16", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.15, 0, 0), 반지름=0.3, 구 안 ρ=1.6, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.15)", "실험 묶음: 구 밀도 실험 (sphere_legacy)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 항목", "lines": ["유형: 설계 단계 밀도 미리보기 (시뮬 전)", "확률분포 탭 없음 — 밀도분포 HTML만 존재"]}]}}, {"item_id": "07_sphere_r03_f19", "label": "sphere_r03_f19", "display_label": "sphere_r03_f19", "title": "sphere_r03_f19", "density_url": "studies/sphere_legacy/density_previews/07_sphere_r03_f19.html", "prob_url": null, "kind": "preview", "rho_name": "sphere_r03_f19", "study_id": "sphere_legacy", "study_label": "구 밀도 실험", "variable_group": "legacy", "variable_group_label": "구 밀도 실험 전체", "group_id": "sphere_legacy_legacy", "group_label": "구 밀도 실험 전체", "conditions": {"summary": "구 밀도 실험 전체 · 구 밀도 실험 · sphere_r03_f19", "sections": [{"title": "밀도 조건", "lines": ["구형 고밀도 영역: 중심 (0.15, 0, 0), 반지름=0.3, 구 안 ρ=1.9, 구 밖 ρ=1 (기준)", "+x 방향으로 질량이 치우친 비대칭 주사위 (편심 x좌표=0.15)", "실험 묶음: 구 밀도 실험 (sphere_legacy)"]}, {"title": "공통 물리·시뮬 설정", "lines": ["주사위 크기: 한 변 1.0 m (중심 원점, 범위 [−0.5, 0.5]³)", "밀도 격자: 12×12×12 = 1728칸 (질량·관성 계산용)", "강체 모델: 겉모양은 대칭 정육면체, 질량 분포만 비대칭 (COM·관성텐서 반영)", "낙하 높이: 주사위 중심 z = 1.5 m 에서 시작", "초기 선속도: (0, 0, 0) — 던지지 않고 떨어뜨림", "초기 각속도: 각 축 ±2.0 rad/s 균일 랜덤", "바닥 마찰 μ = 0.5, 반발계수 e = 0.15", "정지 판정: |v| < 0.01 m/s, |ω| < 0.05 rad/s 가 0.1초 연속", "시뮬 스텝: Δt = 1/240 s, 최대 2400스텝 (약 10.0초)", "결과 측정: 정지 후 바닥(−z)에 닿은 면 번호 (1~6)"]}, {"title": "이 항목", "lines": ["유형: 설계 단계 밀도 미리보기 (시뮬 전)", "확률분포 탭 없음 — 밀도분포 HTML만 존재"]}]}}];
+    const STUDIES = [{"label": "변인 통제 v2", "groups": [{"label": "기준선 — 균일 밀도 ρ=1", "items": [{"display_label": "ρ=1", "cancelled": false}]}, {"label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "items": [{"display_label": "ρ=3", "cancelled": false}, {"display_label": "ρ=4", "cancelled": false}, {"display_label": "ρ=5", "cancelled": false}]}, {"label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "items": [{"display_label": "반지름=0.16", "cancelled": false}, {"display_label": "반지름=0.2", "cancelled": false}, {"display_label": "반지름=0.22", "cancelled": false}]}, {"label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "items": [{"display_label": "편심x좌표=0.22", "cancelled": false}, {"display_label": "편심x좌표=0.28", "cancelled": false}, {"display_label": "편심x좌표=0.32", "cancelled": false}]}]}];
+    const ITEMS = [{"display_label": "ρ=1", "density_url": "runs/20260613_111728_uniform/rho_density.html", "prob_url": "runs/20260613_111728_uniform/face_probabilities.html", "cancelled": false, "group_id": "controlled_uniform", "group_label": "기준선 — 균일 밀도 ρ=1", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_균일 (N=100000)", "png_density": "질량_균일"}, {"display_label": "ρ=3", "density_url": "runs/20260613_112628_ctrl_factor_f30/rho_density.html", "prob_url": "runs/20260613_112628_ctrl_factor_f30/face_probabilities.html", "cancelled": false, "group_id": "controlled_factor", "group_label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_밀도3 (편심0.28 반지름0.2 N=100000)", "png_density": "질량_밀도3 (편심0.28 반지름0.2)"}, {"display_label": "ρ=4", "density_url": "runs/20260613_113527_ctrl_factor_f40/rho_density.html", "prob_url": "runs/20260613_113527_ctrl_factor_f40/face_probabilities.html", "cancelled": false, "group_id": "controlled_factor", "group_label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_밀도4 (편심0.28 반지름0.2 N=100000)", "png_density": "질량_밀도4 (편심0.28 반지름0.2)"}, {"display_label": "ρ=5", "density_url": "runs/20260613_114424_ctrl_factor_f50/rho_density.html", "prob_url": "runs/20260613_114424_ctrl_factor_f50/face_probabilities.html", "cancelled": false, "group_id": "controlled_factor", "group_label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_밀도5 (편심0.28 반지름0.2 N=100000)", "png_density": "질량_밀도5 (편심0.28 반지름0.2)"}, {"display_label": "반지름=0.16", "density_url": "runs/20260613_115320_ctrl_radius_r16/rho_density.html", "prob_url": "runs/20260613_115320_ctrl_radius_r16/face_probabilities.html", "cancelled": false, "group_id": "controlled_radius", "group_label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_반지름0.16 (편심0.28 밀도4 N=100000)", "png_density": "질량_반지름0.16 (편심0.28 밀도4)"}, {"display_label": "반지름=0.2", "density_url": "runs/20260613_120217_ctrl_radius_r20/rho_density.html", "prob_url": "runs/20260613_120217_ctrl_radius_r20/face_probabilities.html", "cancelled": false, "group_id": "controlled_radius", "group_label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_반지름0.2 (편심0.28 밀도4 N=100000)", "png_density": "질량_반지름0.2 (편심0.28 밀도4)"}, {"display_label": "반지름=0.22", "density_url": "runs/20260613_121115_ctrl_radius_r22/rho_density.html", "prob_url": "runs/20260613_121115_ctrl_radius_r22/face_probabilities.html", "cancelled": false, "group_id": "controlled_radius", "group_label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_반지름0.22 (편심0.28 밀도4 N=100000)", "png_density": "질량_반지름0.22 (편심0.28 밀도4)"}, {"display_label": "편심x좌표=0.22", "density_url": "runs/20260613_122013_ctrl_center_x22/rho_density.html", "prob_url": "runs/20260613_122013_ctrl_center_x22/face_probabilities.html", "cancelled": false, "group_id": "controlled_center", "group_label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_편심0.22 (반지름0.18 밀도4 N=100000)", "png_density": "질량_편심0.22 (반지름0.18 밀도4)"}, {"display_label": "편심x좌표=0.28", "density_url": "runs/20260613_122908_ctrl_center_x28/rho_density.html", "prob_url": "runs/20260613_122908_ctrl_center_x28/face_probabilities.html", "cancelled": false, "group_id": "controlled_center", "group_label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_편심0.28 (반지름0.18 밀도4 N=100000)", "png_density": "질량_편심0.28 (반지름0.18 밀도4)"}, {"display_label": "편심x좌표=0.32", "density_url": "runs/20260613_123804_ctrl_center_x32/rho_density.html", "prob_url": "runs/20260613_123804_ctrl_center_x32/face_probabilities.html", "cancelled": false, "group_id": "controlled_center", "group_label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_편심0.32 (반지름0.18 밀도4 N=100000)", "png_density": "질량_편심0.32 (반지름0.18 밀도4)"}];
+    const CHART_CACHE_V = "1781339616";
     let index = 0;
     let view = "density";
+    let currentSrc = "";
     const COMPARE_URL = "comparison.html";
 
+    function chartUrl(url) {
+      if (!url) return "";
+      const sep = url.includes("?") ? "&" : "?";
+      return url + sep + "v=" + CHART_CACHE_V;
+    }
+
     const elList = document.getElementById("run-list");
-    const elSelect = document.getElementById("item-select");
     const elViewer = document.getElementById("viewer");
-    const elInfo = document.getElementById("info-bar");
-    const elSummary = document.getElementById("summary-body");
+    const elLoading = document.getElementById("viewer-loading");
+    const elNavCurrent = document.getElementById("nav-current");
     const btnSidebar = document.getElementById("toggle-sidebar");
-    const btnConditions = document.getElementById("toggle-conditions");
-    const btnSummary = document.getElementById("toggle-summary");
+    const btnPrev = document.getElementById("btn-prev");
+    const btnNext = document.getElementById("btn-next");
+    const btnExportGroup = document.getElementById("btn-export-group");
+    const viewerWrap = document.querySelector(".viewer-wrap");
     const navControls = document.getElementById("nav-controls");
-    const elConditions = document.getElementById("conditions-body");
+
+    function safeExportName(s) {
+      return String(s).replace(/[\\/:*?"<>|]/g, "_").trim().slice(0, 80) || "simulation";
+    }
+
+    async function capturePlotPng(url) {
+      const iframe = document.createElement("iframe");
+      iframe.style.cssText =
+        "position:fixed;opacity:0;pointer-events:none;left:-12000px;top:0;"
+        + "width:1400px;height:1000px;border:0";
+      document.body.appendChild(iframe);
+      try {
+        await new Promise((resolve, reject) => {
+          iframe.onload = () => resolve();
+          iframe.onerror = () => reject(new Error(url));
+          iframe.src = url;
+        });
+        await new Promise(r => setTimeout(r, 1400));
+        const win = iframe.contentWindow;
+        const plot = win.document.querySelector(".js-plotly-plot");
+        if (!plot || !win.Plotly) throw new Error("plotly");
+        const dataUrl = await win.Plotly.toImage(plot, {
+          format: "png",
+          width: 1400,
+          height: 1000,
+          scale: 2,
+        });
+        const bin = atob(dataUrl.split(",")[1]);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        return new Blob([arr], { type: "image/png" });
+      } finally {
+        iframe.remove();
+      }
+    }
+
+    async function fetchOrCapturePng(htmlUrl) {
+      const busted = chartUrl(pngUrlFromHtml(htmlUrl));
+      try {
+        const resp = await fetch(busted);
+        if (resp.ok) return await resp.blob();
+      } catch (e) { /* prebuilt png 없음 */ }
+      return capturePlotPng(chartUrl(htmlUrl));
+    }
+
+    function pngUrlFromHtml(htmlUrl) {
+      const path = htmlUrl.replace(/\?.*$/, "").replace(/\.html$/i, "");
+      return "png/" + path.replace(/\//g, "__") + ".png";
+    }
+
+    function exportTimestamp() {
+      const d = new Date();
+      const pad = (n) => String(n).padStart(2, "0");
+      return (
+        d.getFullYear()
+        + pad(d.getMonth() + 1)
+        + pad(d.getDate()) + "_"
+        + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds())
+      );
+    }
+
+    function studyFolderBase(label) {
+      if (!label) return "변인 통제 V2";
+      return String(label).replace(/v2$/i, "V2");
+    }
+
+    function studyExportFolderName(label) {
+      return studyFolderBase(label) + "_" + exportTimestamp();
+    }
+
+    function collectStudyPngEntries(studyId) {
+      const entries = [];
+      for (const it of ITEMS) {
+        if (it.study_id !== studyId) continue;
+        if (it.density_url && it.png_density) {
+          entries.push({
+            url: it.density_url,
+            pngName: safeExportName(it.png_density) + ".png",
+          });
+        }
+        if (it.prob_url && it.png_prob) {
+          entries.push({
+            url: it.prob_url,
+            pngName: safeExportName(it.png_prob) + ".png",
+          });
+        }
+      }
+      return entries;
+    }
+
+    async function exportGroupPngBundle() {
+      if (view === "compare") return;
+      const it = ITEMS[index];
+      const studyId = it.study_id;
+      if (!studyId) {
+        alert("실험 묶음 정보가 없습니다.");
+        return;
+      }
+      const entries = collectStudyPngEntries(studyId);
+      if (!entries.length) {
+        alert("저장할 PNG가 없습니다.");
+        return;
+      }
+      if (typeof JSZip === "undefined") {
+        alert("PNG 저장 모듈을 불러오지 못했습니다. 네트워크 연결을 확인해 주세요.");
+        return;
+      }
+      const folderName = studyExportFolderName(it.study_label);
+      const folderPrefix = folderName + "/";
+      btnExportGroup.disabled = true;
+      const prevText = btnExportGroup.textContent;
+      try {
+        const zip = new JSZip();
+        let saved = 0;
+        for (let i = 0; i < entries.length; i++) {
+          btnExportGroup.textContent = (i + 1) + "/" + entries.length + "…";
+          try {
+            const pngBlob = await fetchOrCapturePng(entries[i].url);
+            zip.file(folderPrefix + entries[i].pngName, pngBlob);
+            saved += 1;
+          } catch (pngErr) {
+            console.warn("PNG 생성 실패:", entries[i].url, pngErr);
+          }
+        }
+        if (!saved) {
+          alert("PNG를 만들지 못했습니다. 차트를 다시 빌드했는지 확인해 주세요.");
+          return;
+        }
+        const blob = await zip.generateAsync({ type: "blob" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = folderName + ".zip";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      } catch (err) {
+        console.error(err);
+        alert("PNG 저장에 실패했습니다. 같은 주소에서 대시보드를 열었는지 확인해 주세요.");
+      } finally {
+        btnExportGroup.textContent = prevText;
+        const sid = ITEMS[index] && ITEMS[index].study_id;
+        btnExportGroup.disabled = view === "compare" || !sid
+          || collectStudyPngEntries(sid).length === 0;
+      }
+    }
+
+    btnExportGroup.addEventListener("click", () => exportGroupPngBundle());
 
     function escapeHtml(s) {
       return String(s)
@@ -178,38 +533,17 @@
         .replace(/"/g, "&quot;");
     }
 
-    function renderConditions(it) {
-      if (!elConditions) return;
-      if (!it || !it.conditions || view === "compare") {
-        elConditions.innerHTML = '<p class="cond-summary">전체 비교 보기 — 항목을 선택하면 조건이 표시됩니다.</p>';
-        return;
-      }
-      const c = it.conditions;
-      let html = '<p class="cond-summary">' + escapeHtml(c.summary) + '</p>';
-      (c.sections || []).forEach(sec => {
-        html += '<div class="cond-section"><h4>' + escapeHtml(sec.title) + '</h4><ul>';
-        (sec.lines || []).forEach(line => {
-          html += '<li>' + escapeHtml(line) + '</li>';
-        });
-        html += '</ul></div>';
-      });
-      elConditions.innerHTML = html;
-    }
-
-    function pct(v) { return (parseFloat(v) * 100).toFixed(2) + "%"; }
-    function probOf(probs, f) { return probs[f] ?? probs[String(f)] ?? 0; }
-
+    let resizeTimer = null;
     function resizeViewer() {
       const header = document.querySelector("header");
       const wrap = document.querySelector(".viewer-wrap");
-      const layout = document.querySelector(".layout");
       const iframe = document.getElementById("viewer");
-      if (!header || !wrap || !layout || !iframe) return;
+      if (!header || !wrap || !iframe) return;
       if (window.matchMedia("(max-width: 768px)").matches) {
         const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        const h = Math.max(320, vh - header.offsetHeight);
+        const h = Math.max(280, vh - header.offsetHeight);
         wrap.style.height = h + "px";
-        wrap.style.flex = "0 0 auto";
+        wrap.style.flex = "1 1 auto";
         iframe.style.height = h + "px";
       } else {
         wrap.style.height = "";
@@ -217,25 +551,32 @@
         iframe.style.height = "100%";
       }
     }
+    function scheduleResize() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resizeViewer, 80);
+    }
 
     function setPanel(btn, cls, hidden) {
       document.body.classList.toggle(cls, hidden);
       btn.classList.toggle("on", !hidden);
     }
-    btnSidebar.addEventListener("click", () => setPanel(btnSidebar, "sidebar-hidden", !document.body.classList.contains("sidebar-hidden")));
-    btnConditions.addEventListener("click", () => setPanel(btnConditions, "conditions-hidden", !document.body.classList.contains("conditions-hidden")));
-    btnSummary.addEventListener("click", () => setPanel(btnSummary, "summary-hidden", !document.body.classList.contains("summary-hidden")));
+    btnSidebar.addEventListener("click", () => {
+      setPanel(btnSidebar, "sidebar-hidden", !document.body.classList.contains("sidebar-hidden"));
+      scheduleResize();
+    });
 
     function buildUI() {
       elList.innerHTML = "";
-      elSelect.innerHTML = "";
-      elSummary.innerHTML = "";
       let flatIdx = 0;
+      const multiStudy = STUDIES.length > 1;
       STUDIES.forEach(study => {
-        const sh = document.createElement("li");
-        sh.className = "study-header";
-        sh.textContent = study.label;
-        elList.appendChild(sh);
+        const showStudy = multiStudy || study.groups.length > 1;
+        if (showStudy) {
+          const sh = document.createElement("li");
+          sh.className = "study-header";
+          sh.textContent = study.label;
+          elList.appendChild(sh);
+        }
         study.groups.forEach(group => {
           const gh = document.createElement("li");
           gh.className = "group-header";
@@ -246,34 +587,11 @@
             const li = document.createElement("li");
             li.className = "run-item" + (i === index ? " active" : "");
             li.dataset.flatIndex = String(i);
-            const preview = item.kind === "preview" ? '<span class="tag-preview">설계</span>' : "";
             const cancelled = item.cancelled ? ' <span class="badge">중단</span>' : "";
-            const disp = item.display_label || item.label;
-            const meta = item.kind === "simulation"
-              ? ("N=" + item.n_trials + " · 눈 " + item.top_face + " " + (item.top_p*100).toFixed(1) + "%")
-              : "밀도 미리보기";
-            li.innerHTML = '<div class="name">' + escapeHtml(disp) + preview + cancelled + '</div>'
-              + '<div class="sub">' + escapeHtml(item.label) + '</div>'
-              + '<div class="meta">' + meta + '</div>';
+            const disp = item.display_label || "";
+            li.innerHTML = '<div class="name">' + escapeHtml(disp) + cancelled + '</div>';
             li.addEventListener("click", () => { selectItem(i); setPanel(btnSidebar, "sidebar-hidden", true); });
             elList.appendChild(li);
-
-            const opt = document.createElement("option");
-            opt.value = i;
-            opt.textContent = disp + " (" + item.label + ")";
-            elSelect.appendChild(opt);
-
-            if (item.kind === "simulation") {
-              const probs = item.probabilities || {};
-              const tr = document.createElement("tr");
-              tr.style.cursor = "pointer";
-              tr.addEventListener("click", () => selectItem(i));
-              tr.innerHTML = '<td>' + escapeHtml(study.label) + '</td>'
-                + '<td>' + escapeHtml(group.label) + '</td>'
-                + '<td>' + escapeHtml(disp) + '</td><td>' + item.n_trials + '</td>'
-                + [1,2,3,4,5,6].map(f => '<td>' + pct(probOf(probs,f)) + '</td>').join("");
-              elSummary.appendChild(tr);
-            }
             flatIdx++;
           });
         });
@@ -287,20 +605,65 @@
       return it.prob_url || "";
     }
 
+    function setViewerUrl(url) {
+      if (!url) {
+        currentSrc = "";
+        elViewer.removeAttribute("src");
+        elLoading.classList.remove("visible");
+        return;
+      }
+      if (url === currentSrc) return;
+      currentSrc = url;
+      elLoading.classList.add("visible");
+      elViewer.src = chartUrl(url);
+    }
+
+    function itemHasViewUrl(i) {
+      if (i < 0 || i >= ITEMS.length) return false;
+      const it = ITEMS[i];
+      return view === "density" ? !!it.density_url : !!it.prob_url;
+    }
+
+    function findNavIndex(delta) {
+      let i = index + delta;
+      while (i >= 0 && i < ITEMS.length) {
+        if (itemHasViewUrl(i)) return i;
+        i += delta;
+      }
+      return null;
+    }
+
+    function updateNavButtons() {
+      if (view === "compare") {
+        btnPrev.disabled = true;
+        btnNext.disabled = true;
+        return;
+      }
+      btnPrev.disabled = findNavIndex(-1) === null;
+      btnNext.disabled = findNavIndex(1) === null;
+    }
+
     function updateView() {
       const isCompare = view === "compare";
       navControls.classList.toggle("hidden", isCompare);
       const it = ITEMS[index];
-      elViewer.src = currentUrl();
-      resizeViewer();
-      elSelect.value = index;
+      if (viewerWrap) {
+        viewerWrap.classList.toggle("density-view", view === "density" && !isCompare);
+      }
+      if (btnExportGroup) {
+        const sid = it.study_id;
+        btnExportGroup.disabled = isCompare || !sid
+          || collectStudyPngEntries(sid).length === 0;
+      }
+      setViewerUrl(currentUrl());
+      scheduleResize();
       document.querySelectorAll(".run-item").forEach(el => {
         el.classList.toggle("active", parseInt(el.dataset.flatIndex, 10) === index);
       });
 
       if (isCompare) {
-        elInfo.textContent = "시뮬 " + 10 + "개 확률 비교";
-        renderConditions(null);
+        elNavCurrent.textContent = "분포 비교";
+        updateNavButtons();
         document.querySelectorAll(".view-tabs button").forEach(btn => {
           btn.classList.toggle("active", btn.dataset.view === view);
           btn.disabled = btn.dataset.view === "compare" && 10 === 0;
@@ -308,11 +671,8 @@
         return;
       }
 
-      const kind = it.kind === "preview" ? "설계" : "시뮬";
-      const nLabel = it.n_trials ? ("N=" + it.n_trials) : "";
-      elInfo.textContent = [it.study_label, it.variable_group_label, it.display_label || it.label, kind, nLabel]
-        .filter(Boolean).join(" · ");
-      renderConditions(it);
+      elNavCurrent.textContent = it.display_label || "";
+      updateNavButtons();
 
       document.querySelectorAll(".view-tabs button").forEach(btn => {
         const v = btn.dataset.view;
@@ -331,17 +691,13 @@
 
     function step(delta) {
       if (view === "compare") return;
-      let i = index + delta;
-      while (i >= 0 && i < ITEMS.length) {
-        const ok = view === "density" ? ITEMS[i].density_url : ITEMS[i].prob_url;
-        if (ok) { selectItem(i); return; }
-        i += delta;
-      }
+      const target = findNavIndex(delta);
+      if (target === null) return;
+      selectItem(target);
     }
 
-    document.getElementById("btn-prev").addEventListener("click", () => step(-1));
-    document.getElementById("btn-next").addEventListener("click", () => step(1));
-    elSelect.addEventListener("change", e => selectItem(parseInt(e.target.value, 10)));
+    btnPrev.addEventListener("click", () => step(-1));
+    btnNext.addEventListener("click", () => step(1));
     document.querySelectorAll(".view-tabs button").forEach(btn => {
       btn.addEventListener("click", () => {
         if (btn.disabled) return;
@@ -357,19 +713,20 @@
     buildUI();
     resizeViewer();
     updateView();
-    window.addEventListener("resize", resizeViewer);
+    window.addEventListener("resize", scheduleResize);
     window.addEventListener("orientationchange", () => setTimeout(resizeViewer, 300));
     if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", resizeViewer);
+      window.visualViewport.addEventListener("resize", scheduleResize);
     }
     elViewer.addEventListener("load", () => {
+      elLoading.classList.remove("visible");
       try {
         const doc = elViewer.contentDocument || elViewer.contentWindow.document;
         const plot = doc && doc.querySelector(".js-plotly-plot");
         if (plot && elViewer.contentWindow.Plotly) {
           elViewer.contentWindow.Plotly.Plots.resize(plot);
         }
-      } catch (e) { /* cross-origin or plotly 3d */ }
+      } catch (e) { /* plotly 3d */ }
     });
   </script>
 </body>

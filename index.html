@@ -27,7 +27,7 @@
       flex-direction: column;
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
-      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
     header {
       flex-shrink: 0;
@@ -53,6 +53,8 @@
       border-radius: var(--radius);
       border: 1px solid var(--border);
     }
+    .view-tabs button .tab-short { display: none; }
+    #btn-export-group .export-short { display: none; }
     .view-tabs button, .toolbar > button {
       font: inherit;
       font-size: 0.875rem;
@@ -265,7 +267,7 @@
         display: grid;
         grid-template-columns: 1fr auto auto;
         grid-template-rows: auto auto;
-        gap: 4px 6px;
+        gap: 3px 5px;
         align-items: stretch;
       }
       .nav-controls {
@@ -275,13 +277,21 @@
         width: 100%;
       }
       .nav-controls button {
-        width: 52px;
-        min-height: 48px;
-        font-size: 1.6rem;
+        width: 44px;
+        min-height: 40px;
+        font-size: 1.4rem;
       }
       .nav-current {
-        font-size: 1rem;
-        min-height: 48px;
+        font-size: 0.88rem;
+        min-height: 40px;
+        white-space: normal;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        text-overflow: ellipsis;
+        line-height: 1.25;
+        padding: 4px 8px;
       }
       .view-tabs {
         grid-column: 1 / 2;
@@ -290,25 +300,29 @@
       }
       .view-tabs button {
         flex: 1;
-        padding: 7px 4px;
+        padding: 6px 3px;
         font-size: 0.78rem;
       }
+      .view-tabs button .tab-long { display: none; }
+      .view-tabs button .tab-short { display: inline; }
+      #btn-export-group .export-long { display: none; }
+      #btn-export-group .export-short { display: inline; }
       #btn-export-group {
         grid-column: 2 / 3;
         order: unset;
         width: auto;
-        min-height: 38px;
-        padding: 6px 10px;
+        min-height: 34px;
+        padding: 5px 8px;
         font-size: 0.72rem;
       }
       .panel-toggle {
         grid-column: 3 / 4;
         order: unset;
         width: auto;
-        min-width: 48px;
-        min-height: 38px;
+        min-width: 44px;
+        min-height: 34px;
         font-size: 0.82rem;
-        padding: 6px 10px;
+        padding: 5px 8px;
       }
       .layout { flex: 1; flex-direction: column; min-height: 0; }
       main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -331,7 +345,11 @@
         min-height: 0;
         -webkit-overflow-scrolling: touch;
       }
-      .viewer-wrap.density-view { padding: 4px; }
+      .viewer-wrap.density-view { padding: 0; }
+      .viewer-wrap.density-view iframe {
+        border-radius: 0;
+        box-shadow: none;
+      }
       iframe { min-height: 0; height: 100%; touch-action: manipulation; }
     }
   </style>
@@ -349,11 +367,11 @@
         <button type="button" id="btn-next" title="다음" aria-label="다음">›</button>
       </div>
       <div class="view-tabs">
-        <button type="button" data-view="prob">확률분포</button>
-        <button type="button" class="active" data-view="density">질량분포</button>
-        <button type="button" data-view="compare">분포 비교</button>
+        <button type="button" data-view="prob"><span class="tab-long">확률분포</span><span class="tab-short">확률</span></button>
+        <button type="button" class="active" data-view="density"><span class="tab-long">질량분포</span><span class="tab-short">질량</span></button>
+        <button type="button" data-view="compare"><span class="tab-long">분포 비교</span><span class="tab-short">비교</span></button>
       </div>
-      <button type="button" class="export-btn" id="btn-export-group" title="변인 통제 v2 전체 질량·확률 PNG를 ZIP으로 저장">묶음 PNG</button>
+      <button type="button" class="export-btn" id="btn-export-group" title="변인 통제 v2 전체 질량·확률 PNG를 ZIP으로 저장"><span class="export-long">묶음 PNG</span><span class="export-short">PNG</span></button>
       <button type="button" class="panel-toggle" id="toggle-sidebar" title="목록">☰ 목록</button>
     </div>
   </header>
@@ -370,16 +388,22 @@
   <script>
     const STUDIES = [{"label": "변인 통제 v2", "groups": [{"label": "기준선 — 균일 밀도 ρ=1", "items": [{"display_label": "ρ=1", "cancelled": false}]}, {"label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "items": [{"display_label": "ρ=3", "cancelled": false}, {"display_label": "ρ=4", "cancelled": false}, {"display_label": "ρ=5", "cancelled": false}]}, {"label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "items": [{"display_label": "반지름=0.16", "cancelled": false}, {"display_label": "반지름=0.2", "cancelled": false}, {"display_label": "반지름=0.22", "cancelled": false}]}, {"label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "items": [{"display_label": "편심x좌표=0.22", "cancelled": false}, {"display_label": "편심x좌표=0.28", "cancelled": false}, {"display_label": "편심x좌표=0.32", "cancelled": false}]}]}];
     const ITEMS = [{"display_label": "ρ=1", "density_url": "runs/20260613_111728_uniform/rho_density.html", "prob_url": "runs/20260613_111728_uniform/face_probabilities.html", "cancelled": false, "group_id": "controlled_uniform", "group_label": "기준선 — 균일 밀도 ρ=1", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_균일 (N=100000)", "png_density": "질량_균일"}, {"display_label": "ρ=3", "density_url": "runs/20260613_112628_ctrl_factor_f30/rho_density.html", "prob_url": "runs/20260613_112628_ctrl_factor_f30/face_probabilities.html", "cancelled": false, "group_id": "controlled_factor", "group_label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_밀도3 (편심0.28 반지름0.2 N=100000)", "png_density": "질량_밀도3 (편심0.28 반지름0.2)"}, {"display_label": "ρ=4", "density_url": "runs/20260613_113527_ctrl_factor_f40/rho_density.html", "prob_url": "runs/20260613_113527_ctrl_factor_f40/face_probabilities.html", "cancelled": false, "group_id": "controlled_factor", "group_label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_밀도4 (편심0.28 반지름0.2 N=100000)", "png_density": "질량_밀도4 (편심0.28 반지름0.2)"}, {"display_label": "ρ=5", "density_url": "runs/20260613_114424_ctrl_factor_f50/rho_density.html", "prob_url": "runs/20260613_114424_ctrl_factor_f50/face_probabilities.html", "cancelled": false, "group_id": "controlled_factor", "group_label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_밀도5 (편심0.28 반지름0.2 N=100000)", "png_density": "질량_밀도5 (편심0.28 반지름0.2)"}, {"display_label": "반지름=0.16", "density_url": "runs/20260613_115320_ctrl_radius_r16/rho_density.html", "prob_url": "runs/20260613_115320_ctrl_radius_r16/face_probabilities.html", "cancelled": false, "group_id": "controlled_radius", "group_label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_반지름0.16 (편심0.28 밀도4 N=100000)", "png_density": "질량_반지름0.16 (편심0.28 밀도4)"}, {"display_label": "반지름=0.2", "density_url": "runs/20260613_120217_ctrl_radius_r20/rho_density.html", "prob_url": "runs/20260613_120217_ctrl_radius_r20/face_probabilities.html", "cancelled": false, "group_id": "controlled_radius", "group_label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_반지름0.2 (편심0.28 밀도4 N=100000)", "png_density": "질량_반지름0.2 (편심0.28 밀도4)"}, {"display_label": "반지름=0.22", "density_url": "runs/20260613_121115_ctrl_radius_r22/rho_density.html", "prob_url": "runs/20260613_121115_ctrl_radius_r22/face_probabilities.html", "cancelled": false, "group_id": "controlled_radius", "group_label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_반지름0.22 (편심0.28 밀도4 N=100000)", "png_density": "질량_반지름0.22 (편심0.28 밀도4)"}, {"display_label": "편심x좌표=0.22", "density_url": "runs/20260613_122013_ctrl_center_x22/rho_density.html", "prob_url": "runs/20260613_122013_ctrl_center_x22/face_probabilities.html", "cancelled": false, "group_id": "controlled_center", "group_label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_편심0.22 (반지름0.18 밀도4 N=100000)", "png_density": "질량_편심0.22 (반지름0.18 밀도4)"}, {"display_label": "편심x좌표=0.28", "density_url": "runs/20260613_122908_ctrl_center_x28/rho_density.html", "prob_url": "runs/20260613_122908_ctrl_center_x28/face_probabilities.html", "cancelled": false, "group_id": "controlled_center", "group_label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_편심0.28 (반지름0.18 밀도4 N=100000)", "png_density": "질량_편심0.28 (반지름0.18 밀도4)"}, {"display_label": "편심x좌표=0.32", "density_url": "runs/20260613_123804_ctrl_center_x32/rho_density.html", "prob_url": "runs/20260613_123804_ctrl_center_x32/face_probabilities.html", "cancelled": false, "group_id": "controlled_center", "group_label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_편심0.32 (반지름0.18 밀도4 N=100000)", "png_density": "질량_편심0.32 (반지름0.18 밀도4)"}];
-    const CHART_CACHE_V = "1781341316";
+    const CHART_CACHE_V = "1781343123";
     let index = 0;
     let view = "density";
     let currentSrc = "";
     const COMPARE_URL = "comparison.html";
 
+    function isMobileView() {
+      return window.matchMedia("(max-width: 768px)").matches;
+    }
+
     function chartUrl(url) {
       if (!url) return "";
       const sep = url.includes("?") ? "&" : "?";
-      return url + sep + "v=" + CHART_CACHE_V;
+      let out = url + sep + "v=" + CHART_CACHE_V;
+      if (isMobileView()) out += "&mobile=1";
+      return out;
     }
 
     const elList = document.getElementById("run-list");
@@ -681,6 +705,7 @@
 
       if (isCompare) {
         elNavCurrent.textContent = "분포 비교";
+        elNavCurrent.title = "분포 비교";
         updateNavButtons();
         document.querySelectorAll(".view-tabs button").forEach(btn => {
           btn.classList.toggle("active", btn.dataset.view === view);
@@ -690,6 +715,7 @@
       }
 
       elNavCurrent.textContent = it.display_label || "";
+      elNavCurrent.title = it.display_label || "";
       updateNavButtons();
 
       document.querySelectorAll(".view-tabs button").forEach(btn => {
@@ -735,16 +761,22 @@
     window.addEventListener("orientationchange", () => setTimeout(resizeViewer, 300));
     if (window.visualViewport) {
       window.visualViewport.addEventListener("resize", scheduleResize);
+      window.visualViewport.addEventListener("scroll", scheduleResize);
     }
     elViewer.addEventListener("load", () => {
       elLoading.classList.remove("visible");
       scheduleResize();
       try {
-        const doc = elViewer.contentDocument || elViewer.contentWindow.document;
+        const win = elViewer.contentWindow;
+        const doc = win.document;
         const plot = doc && doc.querySelector(".js-plotly-plot");
-        if (plot && elViewer.contentWindow.Plotly) {
-          elViewer.contentWindow.Plotly.Plots.resize(plot);
+        function nudgeChart() {
+          if (win.__resizePlotlyChart) win.__resizePlotlyChart();
+          if (plot && win.Plotly) win.Plotly.Plots.resize(plot);
         }
+        nudgeChart();
+        setTimeout(nudgeChart, 150);
+        setTimeout(nudgeChart, 450);
       } catch (e) { /* plotly 3d */ }
     });
   </script>

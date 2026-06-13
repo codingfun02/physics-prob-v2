@@ -6,6 +6,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from multiprocessing import cpu_count
 
 from density.analytic import PRESETS
+from simulation.output_layout import variable_group_for_preset
 from simulation.pipeline import SimulationJob, run_full_simulation
 
 
@@ -42,6 +43,7 @@ def build_jobs(
     alpha: float | None = None,
     output_dir: str | None = None,
     checkpoint_interval: int = 1000,
+    study_id: str | None = None,
 ) -> list[SimulationJob]:
     jobs = []
     for name in rho_names:
@@ -57,6 +59,8 @@ def build_jobs(
                 alpha=alpha,
                 output_dir=output_dir or "output",
                 checkpoint_interval=checkpoint_interval,
+                study_id=study_id,
+                variable_group=variable_group_for_preset(name, study_id),
             )
         )
     return jobs

@@ -1,0 +1,1 @@
+def run_full_simulation(job: SimulationJob) -> dict:

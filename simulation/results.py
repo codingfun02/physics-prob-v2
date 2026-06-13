@@ -25,13 +25,33 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def create_run_directory(output_dir: str | Path, rho_label: str) -> tuple[Path, str]:
+def create_run_directory(
+    output_dir: str | Path,
+    rho_label: str,
+    *,
+    study_id: str | None = None,
+    variable_group: str | None = None,
+    preset_name: str | None = None,
+) -> tuple[Path, str]:
     """
-    시행마다 고유 폴더 생성.
+    시행 폴더 생성.
 
-    예: output/runs/20260612_143052_uniform/
+    study_id·variable_group 지정 시:
+      studies/{study}/{group}/runs/{preset}/
+    미지정 시 (레거시):
+      runs/{timestamp}_{label}/
     """
+    from simulation.output_layout import grouped_run_dir, preset_name_from_label
+
     output_dir = Path(output_dir)
+    preset = preset_name or preset_name_from_label(rho_label)
+
+    if study_id and variable_group:
+        run_dir = grouped_run_dir(study_id, variable_group, preset, output_dir)
+        run_dir.mkdir(parents=True, exist_ok=True)
+        run_id = f"{study_id}/{variable_group}/{preset}"
+        return run_dir, run_id
+
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     safe_label = "".join(c if c.isalnum() or c in "-_" else "_" for c in rho_label)
     run_id = f"{ts}_{safe_label}"

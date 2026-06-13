@@ -1,5 +1,6 @@
 from .single_trial import run_single_trial
-from .monte_carlo import run_monte_carlo
+from .cancel import install_cancel_handler, is_cancel_requested, request_cancel, reset_cancel
+from .monte_carlo import MonteCarloResult, run_monte_carlo
 from .pipeline import SimulationJob, run_full_simulation
 from .batch import allocate_workers, run_batch, build_jobs
 from .results import (
@@ -13,6 +14,11 @@ from .results import (
 
 __all__ = [
     "run_single_trial",
+    "install_cancel_handler",
+    "is_cancel_requested",
+    "request_cancel",
+    "reset_cancel",
+    "MonteCarloResult",
     "run_monte_carlo",
     "run_full_simulation",
     "SimulationJob",

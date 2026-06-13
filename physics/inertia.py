@@ -1,4 +1,4 @@
-"""격자 밀도 → 질량, 무게중심, 관성텐서 계산."""
+"""격자 밀도 → 질량, 질량중심, 관성텐서 계산."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ class InertiaProperties:
     """PyBullet에 넣을 강체 물성."""
 
     mass: float
-    com: np.ndarray              # 무게중심 (주사위 좌표계)
+    com: np.ndarray              # 질량중심 (주사위 좌표계)
     inertia_tensor: np.ndarray   # 3×3 관성텐서 (원점 기준 → COM 기준으로 변환됨)
     principal_moments: np.ndarray  # 주관성 모멘트 [I1, I2, I3]
     principal_rotation: Rotation   # 주축 방향 (body → principal)
@@ -24,7 +24,7 @@ class InertiaProperties:
 
 def compute_inertia(grid: RhoGrid) -> InertiaProperties:
     """
-    6×6×6 격자에서 강체의 질량·무게중심·관성텐서를 계산합니다.
+    6×6×6 격자에서 강체의 질량·질량중심·관성텐서를 계산합니다.
 
     각 소셀을 작은 점질량으로 보고 합산합니다.
     """

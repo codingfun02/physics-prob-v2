@@ -48,7 +48,7 @@ class RhoGrid:
     @property
     def center_of_mass(self) -> np.ndarray:
         """
-        무게중심 (질량 중심).
+        질량중심 (질량 가중 평균 위치).
 
         공식: r_cm = (Σ m_i × r_i) / (Σ m_i)
         균일 밀도면 원점 (0,0,0)에 가깝습니다.

@@ -9,6 +9,9 @@ from config import OUTPUT_DIR
 from density.analytic import PRESETS, get_preset_rho
 from density.grid import RhoGrid
 from density.visualize import plot_rho_grid
+from simulation.cancel import install_cancel_handler, reset_cancel
+from simulation.output_layout import adhoc_preview_path, dashboard_path
+from simulation.run_descriptions import density_plot_title
 from simulation.pipeline import SimulationJob, run_full_simulation
 from simulation.single_trial import run_single_trial
 
@@ -45,8 +48,9 @@ def main():
 
     print(grid)
 
-    preview_density = out / f"rho_density_{rho_label}.html"
-    plot_rho_grid(grid, title=f"밀도 분포: {rho_label}", save_path=preview_density, show=False)
+    preview_density = adhoc_preview_path(rho_label, out)
+    preview_density.parent.mkdir(parents=True, exist_ok=True)
+    plot_rho_grid(grid, title=density_plot_title(rho_label), save_path=preview_density, show=False)
     print(f"3D 밀도 그래프 (미리보기): {preview_density}")
 
     if args.visualize_only:
@@ -72,6 +76,9 @@ def main():
         checkpoint_interval=args.checkpoint_interval,
     )
 
+    install_cancel_handler()
+    reset_cancel()
+
     print(f"\n{args.trials}회 시뮬레이션 시작 (워커 {n_workers}개)...")
     result = run_full_simulation(job)
 
@@ -85,6 +92,7 @@ def main():
     print(f"  확률 그래프: {result['prob_html']}")
     print(f"  결과 JSON:   {result['results_json']}")
     print(f"  누적 목록:   {out / 'history.json'}")
+    print(f"  대시보드:    {dashboard_path(out)}")
 
 
 if __name__ == "__main__":

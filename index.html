@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>시뮬레이션 결과 대시보드</title>
   <style>
     :root {
@@ -52,9 +52,9 @@
     .run-item .sub { font-size: 0.68rem; opacity: 0.75; margin-top: 2px; }
     .run-item .meta { font-size: 0.7rem; opacity: 0.85; margin-top: 2px; }
     .tag-preview { font-size: 0.65rem; background: #475569; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
-    main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: #fff; }
-    .viewer-wrap { flex: 1; min-height: 0; }
-    iframe { width: 100%; height: 100%; border: none; display: block; }
+    main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: #fff; overflow: hidden; }
+    .viewer-wrap { flex: 1; min-height: 0; position: relative; }
+    iframe { width: 100%; height: 100%; border: none; display: block; min-height: 280px; }
     .summary { flex-shrink: 0; max-height: 38vh; background: #fff; border-top: 1px solid var(--border); padding: 8px 12px; font-size: 0.78rem; overflow: auto; transition: max-height 0.25s; }
     body.summary-hidden .summary { max-height: 0; padding: 0; border-top: none; overflow: hidden; }
     table { border-collapse: collapse; width: 100%; }
@@ -75,27 +75,37 @@
     .cond-section li { margin: 2px 0; line-height: 1.45; }
     .summary-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     @media (max-width: 768px) {
-      html, body { height: auto; min-height: 100%; overflow: auto; }
-      header { padding: 10px 12px; flex-direction: column; align-items: stretch; }
+      html, body {
+        height: 100%;
+        height: 100dvh;
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+      }
+      header { padding: 10px 12px; flex-direction: column; align-items: stretch; flex-shrink: 0; }
       header h1 { font-size: 1.05rem; }
-      .toolbar { margin-left: 0; width: 100%; justify-content: stretch; }
+      #run-count { order: 3; }
+      .info-bar { order: 2; white-space: normal; line-height: 1.35; min-width: 0; }
+      .toolbar { margin-left: 0; width: 100%; justify-content: stretch; order: 4; }
       .view-tabs { flex: 1; }
       .view-tabs button { flex: 1; padding: 10px 6px; font-size: 0.8rem; }
       .toolbar > button, .panel-toggle { padding: 10px 12px; min-height: 44px; }
       #item-select { max-width: none; flex: 1; min-height: 44px; font-size: 1rem; }
       .nav-controls { width: 100%; }
       .nav-controls button { min-width: 44px; min-height: 44px; }
-      .info-bar { white-space: normal; line-height: 1.35; min-width: 0; }
-      .layout { flex-direction: column; min-height: 55vh; }
+      .layout { flex: 1; flex-direction: column; min-height: 0; overflow: hidden; }
+      main { flex: 1; min-height: 0; }
       aside {
-        width: 100%; max-height: none; position: fixed; left: 0; right: 0; bottom: 0;
+        width: 100%; position: fixed; left: 0; right: 0; bottom: 0;
         max-height: 70vh; z-index: 50; box-shadow: 0 -4px 24px rgba(0,0,0,0.25);
         border-radius: 12px 12px 0 0;
       }
       body.sidebar-hidden aside { display: none; }
-      .viewer-wrap { min-height: 52vh; }
-      .conditions-panel { max-height: none; }
-      .summary { max-height: 45vh; }
+      .viewer-wrap { flex: 0 0 auto; width: 100%; }
+      iframe { min-height: 300px; }
+      .conditions-panel { max-height: 30vh; flex-shrink: 0; }
+      .summary { max-height: 35vh; flex-shrink: 0; }
       th, td { font-size: 0.72rem; padding: 4px 6px; }
     }
   </style>
@@ -189,6 +199,25 @@
     function pct(v) { return (parseFloat(v) * 100).toFixed(2) + "%"; }
     function probOf(probs, f) { return probs[f] ?? probs[String(f)] ?? 0; }
 
+    function resizeViewer() {
+      const header = document.querySelector("header");
+      const wrap = document.querySelector(".viewer-wrap");
+      const layout = document.querySelector(".layout");
+      const iframe = document.getElementById("viewer");
+      if (!header || !wrap || !layout || !iframe) return;
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+        const h = Math.max(320, vh - header.offsetHeight);
+        wrap.style.height = h + "px";
+        wrap.style.flex = "0 0 auto";
+        iframe.style.height = h + "px";
+      } else {
+        wrap.style.height = "";
+        wrap.style.flex = "";
+        iframe.style.height = "100%";
+      }
+    }
+
     function setPanel(btn, cls, hidden) {
       document.body.classList.toggle(cls, hidden);
       btn.classList.toggle("on", !hidden);
@@ -263,6 +292,7 @@
       navControls.classList.toggle("hidden", isCompare);
       const it = ITEMS[index];
       elViewer.src = currentUrl();
+      resizeViewer();
       elSelect.value = index;
       document.querySelectorAll(".run-item").forEach(el => {
         el.classList.toggle("active", parseInt(el.dataset.flatIndex, 10) === index);
@@ -325,7 +355,22 @@
     });
 
     buildUI();
+    resizeViewer();
     updateView();
+    window.addEventListener("resize", resizeViewer);
+    window.addEventListener("orientationchange", () => setTimeout(resizeViewer, 300));
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", resizeViewer);
+    }
+    elViewer.addEventListener("load", () => {
+      try {
+        const doc = elViewer.contentDocument || elViewer.contentWindow.document;
+        const plot = doc && doc.querySelector(".js-plotly-plot");
+        if (plot && elViewer.contentWindow.Plotly) {
+          elViewer.contentWindow.Plotly.Plots.resize(plot);
+        }
+      } catch (e) { /* cross-origin or plotly 3d */ }
+    });
   </script>
 </body>
 </html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>시뮬레이션 결과 대시보드</title>
+  <style>
+    :root {
+      --bg: #f4f5f7; --sidebar: #1e293b; --sidebar-text: #e2e8f0;
+      --accent: #3b82f6; --border: #cbd5e1;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: "Segoe UI", system-ui, sans-serif; background: var(--bg); display: flex; flex-direction: column; }
+    header {
+      flex-shrink: 0; background: #fff; border-bottom: 1px solid var(--border);
+      padding: 8px 14px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; z-index: 10;
+    }
+    header h1 { font-size: 1rem; font-weight: 600; }
+    #run-count { font-size: 0.8rem; color: #64748b; }
+    .toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+    .view-tabs { display: flex; gap: 4px; }
+    .view-tabs button, .toolbar > button, .toolbar > select, .panel-toggle {
+      font: inherit; font-size: 0.85rem; padding: 5px 10px;
+      border: 1px solid var(--border); border-radius: 6px; background: #fff; cursor: pointer;
+    }
+    .view-tabs button.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+    .view-tabs button:disabled { opacity: 0.4; cursor: not-allowed; }
+    button:hover:not(:disabled) { background: #f1f5f9; }
+    .view-tabs button.active:hover { background: #2563eb; }
+    .panel-toggle.on { background: #e0e7ff; border-color: var(--accent); color: #1d4ed8; }
+    #item-select { max-width: 300px; }
+    .nav-controls { display: flex; align-items: center; gap: 6px; }
+    .nav-controls.hidden { display: none; }
+    .info-bar { flex: 1; min-width: 180px; font-size: 0.78rem; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .layout { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+    aside { width: 300px; background: var(--sidebar); color: var(--sidebar-text); overflow-y: auto; flex-shrink: 0; transition: width 0.2s; }
+    body.sidebar-hidden aside { width: 0; overflow: hidden; border: none; }
+    .run-list { list-style: none; }
+    .group-header {
+      padding: 10px 12px 6px; font-size: 0.72rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8;
+      background: #0f172a; position: sticky; top: 0; z-index: 1;
+    }
+    .run-item { padding: 9px 12px 9px 16px; border-bottom: 1px solid #334155; cursor: pointer; }
+    .run-item:hover { background: #334155; }
+    .run-item.active { background: var(--accent); }
+    .run-item .name { font-weight: 600; font-size: 0.86rem; }
+    .run-item .meta { font-size: 0.7rem; opacity: 0.85; margin-top: 2px; }
+    .tag-preview { font-size: 0.65rem; background: #475569; padding: 1px 5px; border-radius: 3px; margin-left: 4px; }
+    main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: #fff; }
+    .viewer-wrap { flex: 1; min-height: 0; }
+    iframe { width: 100%; height: 100%; border: none; display: block; }
+    .summary { flex-shrink: 0; max-height: 38vh; background: #fff; border-top: 1px solid var(--border); padding: 8px 12px; font-size: 0.78rem; overflow: auto; transition: max-height 0.25s; }
+    body.summary-hidden .summary { max-height: 0; padding: 0; border-top: none; overflow: hidden; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 5px 8px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+    th { color: #64748b; font-weight: 600; position: sticky; top: 0; background: #fff; }
+    .badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; background: #fef3c7; color: #92400e; }
+  </style>
+</head>
+<body class="sidebar-hidden summary-hidden">
+  <header>
+    <h1>시뮬레이션 대시보드</h1>
+    <span id="run-count">밀도 17 · 시뮬 10</span>
+    <div class="info-bar" id="info-bar"></div>
+    <div class="toolbar">
+      <div class="nav-controls" id="nav-controls">
+        <button type="button" id="btn-prev" title="이전">◀</button>
+        <select id="item-select" aria-label="항목 선택"></select>
+        <button type="button" id="btn-next" title="다음">▶</button>
+      </div>
+      <div class="view-tabs">
+        <button type="button" data-view="prob">확률분포</button>
+        <button type="button" class="active" data-view="density">밀도분포</button>
+        <button type="button" data-view="compare">전체 비교</button>
+      </div>
+      <button type="button" class="panel-toggle" id="toggle-sidebar" title="목록">☰ 목록</button>
+      <button type="button" class="panel-toggle" id="toggle-summary" title="비교 표">⊞ 표</button>
+    </div>
+  </header>
+  <div class="layout">
+    <aside id="sidebar"><ul class="run-list" id="run-list"></ul></aside>
+    <main>
+      <div class="viewer-wrap"><iframe id="viewer" title="뷰어"></iframe></div>
+      <div class="summary" id="summary-panel">
+        <table>
+          <thead><tr>
+            <th>묶음</th><th>실행/항목</th><th>ρ</th><th>N</th><th>최다 눈</th>
+            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th>
+          </tr></thead>
+          <tbody id="summary-body"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script>
+    const GROUPS = [{"id": "controlled_study", "label": "변인 통제", "items": [{"item_id": "20260613_111728_uniform", "label": "uniform", "title": "20260613_111728_uniform", "density_url": "runs/20260613_111728_uniform/rho_density.html", "prob_url": "runs/20260613_111728_uniform/face_probabilities.html", "kind": "simulation", "run_id": "20260613_111728_uniform", "rho_name": "uniform", "n_trials": 100000, "probabilities": {"1": 0.16739, "2": 0.16659, "3": 0.16533, "4": 0.16821, "5": 0.16568, "6": 0.1668}, "cancelled": false, "timestamp": "2026-06-13T04:39:37.352330+00:00", "target_trials": null, "study_id": "controlled", "top_face": "4", "top_p": 0.16821}, {"item_id": "20260613_112628_ctrl_factor_f30", "label": "ctrl_factor_f30", "title": "20260613_112628_ctrl_factor_f30", "density_url": "runs/20260613_112628_ctrl_factor_f30/rho_density.html", "prob_url": "runs/20260613_112628_ctrl_factor_f30/face_probabilities.html", "kind": "simulation", "run_id": "20260613_112628_ctrl_factor_f30", "rho_name": "ctrl_factor_f30", "n_trials": 100000, "probabilities": {"1": 0.16701, "2": 0.17341, "3": 0.16668, "4": 0.167, "5": 0.16021, "6": 0.16569}, "cancelled": false, "timestamp": "2026-06-13T04:39:38.019662+00:00", "target_trials": null, "study_id": "controlled", "top_face": "2", "top_p": 0.17341}, {"item_id": "20260613_113527_ctrl_factor_f40", "label": "ctrl_factor_f40", "title": "20260613_113527_ctrl_factor_f40", "density_url": "runs/20260613_113527_ctrl_factor_f40/rho_density.html", "prob_url": "runs/20260613_113527_ctrl_factor_f40/face_probabilities.html", "kind": "simulation", "run_id": "20260613_113527_ctrl_factor_f40", "rho_name": "ctrl_factor_f40", "n_trials": 100000, "probabilities": {"1": 0.16611, "2": 0.15843, "3": 0.16585, "4": 0.16686, "5": 0.1763, "6": 0.16645}, "cancelled": false, "timestamp": "2026-06-13T04:39:38.552552+00:00", "target_trials": null, "study_id": "controlled", "top_face": "5", "top_p": 0.1763}, {"item_id": "20260613_114424_ctrl_factor_f50", "label": "ctrl_factor_f50", "title": "20260613_114424_ctrl_factor_f50", "density_url": "runs/20260613_114424_ctrl_factor_f50/rho_density.html", "prob_url": "runs/20260613_114424_ctrl_factor_f50/face_probabilities.html", "kind": "simulation", "run_id": "20260613_114424_ctrl_factor_f50", "rho_name": "ctrl_factor_f50", "n_trials": 100000, "probabilities": {"1": 0.16656, "2": 0.15571, "3": 0.16851, "4": 0.16686, "5": 0.17875, "6": 0.16361}, "cancelled": false, "timestamp": "2026-06-13T04:39:39.070654+00:00", "target_trials": null, "study_id": "controlled", "top_face": "5", "top_p": 0.17875}, {"item_id": "20260613_115320_ctrl_radius_r16", "label": "ctrl_radius_r16", "title": "20260613_115320_ctrl_radius_r16", "density_url": "runs/20260613_115320_ctrl_radius_r16/rho_density.html", "prob_url": "runs/20260613_115320_ctrl_radius_r16/face_probabilities.html", "kind": "simulation", "run_id": "20260613_115320_ctrl_radius_r16", "rho_name": "ctrl_radius_r16", "n_trials": 100000, "probabilities": {"1": 0.16436, "2": 0.16388, "3": 0.16667, "4": 0.1656, "5": 0.17125, "6": 0.16824}, "cancelled": false, "timestamp": "2026-06-13T04:39:39.640818+00:00", "target_trials": null, "study_id": "controlled", "top_face": "5", "top_p": 0.17125}, {"item_id": "20260613_120217_ctrl_radius_r20", "label": "ctrl_radius_r20", "title": "20260613_120217_ctrl_radius_r20", "density_url": "runs/20260613_120217_ctrl_radius_r20/rho_density.html", "prob_url": "runs/20260613_120217_ctrl_radius_r20/face_probabilities.html", "kind": "simulation", "run_id": "20260613_120217_ctrl_radius_r20", "rho_name": "ctrl_radius_r20", "n_trials": 100000, "probabilities": {"1": 0.16598, "2": 0.16034, "3": 0.16509, "4": 0.16673, "5": 0.17611, "6": 0.16575}, "cancelled": false, "timestamp": "2026-06-13T04:39:40.172500+00:00", "target_trials": null, "study_id": "controlled", "top_face": "5", "top_p": 0.17611}, {"item_id": "20260613_121115_ctrl_radius_r22", "label": "ctrl_radius_r22", "title": "20260613_121115_ctrl_radius_r22", "density_url": "runs/20260613_121115_ctrl_radius_r22/rho_density.html", "prob_url": "runs/20260613_121115_ctrl_radius_r22/face_probabilities.html", "kind": "simulation", "run_id": "20260613_121115_ctrl_radius_r22", "rho_name": "ctrl_radius_r22", "n_trials": 100000, "probabilities": {"1": 0.16517, "2": 0.17743, "3": 0.16739, "4": 0.16693, "5": 0.15757, "6": 0.16551}, "cancelled": false, "timestamp": "2026-06-13T04:39:40.689036+00:00", "target_trials": null, "study_id": "controlled", "top_face": "2", "top_p": 0.17743}, {"item_id": "20260613_122013_ctrl_center_x22", "label": "ctrl_center_x22", "title": "20260613_122013_ctrl_center_x22", "density_url": "runs/20260613_122013_ctrl_center_x22/rho_density.html", "prob_url": "runs/20260613_122013_ctrl_center_x22/face_probabilities.html", "kind": "simulation", "run_id": "20260613_122013_ctrl_center_x22", "rho_name": "ctrl_center_x22", "n_trials": 100000, "probabilities": {"1": 0.1673, "2": 0.16399, "3": 0.16607, "4": 0.1649, "5": 0.17344, "6": 0.1643}, "cancelled": false, "timestamp": "2026-06-13T04:39:41.189479+00:00", "target_trials": null, "study_id": "controlled", "top_face": "5", "top_p": 0.17344}, {"item_id": "20260613_122908_ctrl_center_x28", "label": "ctrl_center_x28", "title": "20260613_122908_ctrl_center_x28", "density_url": "runs/20260613_122908_ctrl_center_x28/rho_density.html", "prob_url": "runs/20260613_122908_ctrl_center_x28/face_probabilities.html", "kind": "simulation", "run_id": "20260613_122908_ctrl_center_x28", "rho_name": "ctrl_center_x28", "n_trials": 100000, "probabilities": {"1": 0.16624, "2": 0.15987, "3": 0.1662, "4": 0.16734, "5": 0.17415, "6": 0.1662}, "cancelled": false, "timestamp": "2026-06-13T04:39:41.723233+00:00", "target_trials": null, "study_id": "controlled", "top_face": "5", "top_p": 0.17415}, {"item_id": "20260613_123804_ctrl_center_x32", "label": "ctrl_center_x32", "title": "20260613_123804_ctrl_center_x32", "density_url": "runs/20260613_123804_ctrl_center_x32/rho_density.html", "prob_url": "runs/20260613_123804_ctrl_center_x32/face_probabilities.html", "kind": "simulation", "run_id": "20260613_123804_ctrl_center_x32", "rho_name": "ctrl_center_x32", "n_trials": 100000, "probabilities": {"1": 0.16628, "2": 0.15776, "3": 0.16595, "4": 0.16774, "5": 0.17758, "6": 0.16469}, "cancelled": false, "timestamp": "2026-06-13T04:39:42.223927+00:00", "target_trials": null, "study_id": "controlled", "top_face": "5", "top_p": 0.17758}]}, {"id": "sphere_legacy_study", "label": "구 밀도 실험", "items": [{"item_id": "01_uniform", "label": "uniform", "title": "uniform", "density_url": "studies/sphere_legacy/density_previews/01_uniform.html", "prob_url": null, "kind": "preview"}, {"item_id": "02_sphere_r02_f13", "label": "sphere_r02_f13", "title": "sphere_r02_f13", "density_url": "studies/sphere_legacy/density_previews/02_sphere_r02_f13.html", "prob_url": null, "kind": "preview"}, {"item_id": "03_sphere_r02_f16", "label": "sphere_r02_f16", "title": "sphere_r02_f16", "density_url": "studies/sphere_legacy/density_previews/03_sphere_r02_f16.html", "prob_url": null, "kind": "preview"}, {"item_id": "04_sphere_r02_f19", "label": "sphere_r02_f19", "title": "sphere_r02_f19", "density_url": "studies/sphere_legacy/density_previews/04_sphere_r02_f19.html", "prob_url": null, "kind": "preview"}, {"item_id": "05_sphere_r03_f13", "label": "sphere_r03_f13", "title": "sphere_r03_f13", "density_url": "studies/sphere_legacy/density_previews/05_sphere_r03_f13.html", "prob_url": null, "kind": "preview"}, {"item_id": "06_sphere_r03_f16", "label": "sphere_r03_f16", "title": "sphere_r03_f16", "density_url": "studies/sphere_legacy/density_previews/06_sphere_r03_f16.html", "prob_url": null, "kind": "preview"}, {"item_id": "07_sphere_r03_f19", "label": "sphere_r03_f19", "title": "sphere_r03_f19", "density_url": "studies/sphere_legacy/density_previews/07_sphere_r03_f19.html", "prob_url": null, "kind": "preview"}]}];
+    const ITEMS = [{"item_id": "20260613_111728_uniform", "label": "uniform", "title": "20260613_111728_uniform", "density_url": "runs/20260613_111728_uniform/rho_density.html", "prob_url": "runs/20260613_111728_uniform/face_probabilities.html", "kind": "simulation", "run_id": "20260613_111728_uniform", "rho_name": "uniform", "n_trials": 100000, "probabilities": {"1": 0.16739, "2": 0.16659, "3": 0.16533, "4": 0.16821, "5": 0.16568, "6": 0.1668}, "cancelled": false, "timestamp": "2026-06-13T04:39:37.352330+00:00", "target_trials": null, "study_id": "controlled", "top_face": "4", "top_p": 0.16821, "group_id": "controlled_study", "group_label": "변인 통제"}, {"item_id": "20260613_112628_ctrl_factor_f30", "label": "ctrl_factor_f30", "title": "20260613_112628_ctrl_factor_f30", "density_url": "runs/20260613_112628_ctrl_factor_f30/rho_density.html", "prob_url": "runs/20260613_112628_ctrl_factor_f30/face_probabilities.html", "kind": "simulation", "run_id": "20260613_112628_ctrl_factor_f30", "rho_name": "ctrl_factor_f30", "n_trials": 100000, "probabilities": {"1": 0.16701, "2": 0.17341, "3": 0.16668, "4": 0.167, "5": 0.16021, "6": 0.16569}, "cancelled": false, "timestamp": "2026-06-13T04:39:38.019662+00:00", "target_trials": null, "study_id": "controlled", "top_face": "2", "top_p": 0.17341, "group_id": "controlled_study", "group_label": "변인 통제"}, {"item_id": "20260613_113527_ctrl_factor_f40", "label": "ctrl_factor_f40", "title": "20260613_113527_ctrl_factor_f40", "density_url": "runs/20260613_113527_ctrl_factor_f40/rho_density.html", "prob_url": "runs/20260613_113527_ctrl_factor_f40/face_probabilities.html", "kind": "simulation", "run_id": "20260613_113527_ctrl_factor_f40", "rho_name": "ctrl_factor_f40", "n_trials": 100000, "probabilities": {"1": 0.16611, "2": 0.15843, "3": 0.16585, "4": 0.16686, "5": 0.1763, "6": 0.16645}, "cancelled": false, "timestamp": "2026-06-13T04:39:38.552552+00:00", "target_trials": null, "study_id": "controlled", "top_face": "5", "top_p": 0.1763, "group_id": "controlled_study", "group_label": "변인 통제"}, {"item_id": "20260613_114424_ctrl_factor_f50", "label": "ctrl_factor_f50", "title": "20260613_114424_ctrl_factor_f50", "density_url": "runs/20260613_114424_ctrl_factor_f50/rho_density.html", "prob_url": "runs/20260613_114424_ctrl_factor_f50/face_probabilities.html", "kind": "simulation", "run_id": "20260613_114424_ctrl_factor_f50", "rho_name": "ctrl_factor_f50", "n_trials": 100000, "probabilities": {"1": 0.16656, "2": 0.15571, "3": 0.16851, "4": 0.16686, "5": 0.17875, "6": 0.16361}, "cancelled": false, "timestamp": "2026-06-13T04:39:39.070654+00:00", "target_trials": null, "study_id": "controlled", "top_face": "5", "top_p": 0.17875, "group_id": "controlled_study", "group_label": "변인 통제"}, {"item_id": "20260613_115320_ctrl_radius_r16", "label": "ctrl_radius_r16", "title": "20260613_115320_ctrl_radius_r16", "density_url": "runs/20260613_115320_ctrl_radius_r16/rho_density.html", "prob_url": "runs/20260613_115320_ctrl_radius_r16/face_probabilities.html", "kind": "simulation", "run_id": "20260613_115320_ctrl_radius_r16", "rho_name": "ctrl_radius_r16", "n_trials": 100000, "probabilities": {"1": 0.16436, "2": 0.16388, "3": 0.16667, "4": 0.1656, "5": 0.17125, "6": 0.16824}, "cancelled": false, "timestamp": "2026-06-13T04:39:39.640818+00:00", "target_trials": null, "study_id": "controlled", "top_face": "5", "top_p": 0.17125, "group_id": "controlled_study", "group_label": "변인 통제"}, {"item_id": "20260613_120217_ctrl_radius_r20", "label": "ctrl_radius_r20", "title": "20260613_120217_ctrl_radius_r20", "density_url": "runs/20260613_120217_ctrl_radius_r20/rho_density.html", "prob_url": "runs/20260613_120217_ctrl_radius_r20/face_probabilities.html", "kind": "simulation", "run_id": "20260613_120217_ctrl_radius_r20", "rho_name": "ctrl_radius_r20", "n_trials": 100000, "probabilities": {"1": 0.16598, "2": 0.16034, "3": 0.16509, "4": 0.16673, "5": 0.17611, "6": 0.16575}, "cancelled": false, "timestamp": "2026-06-13T04:39:40.172500+00:00", "target_trials": null, "study_id": "controlled", "top_face": "5", "top_p": 0.17611, "group_id": "controlled_study", "group_label": "변인 통제"}, {"item_id": "20260613_121115_ctrl_radius_r22", "label": "ctrl_radius_r22", "title": "20260613_121115_ctrl_radius_r22", "density_url": "runs/20260613_121115_ctrl_radius_r22/rho_density.html", "prob_url": "runs/20260613_121115_ctrl_radius_r22/face_probabilities.html", "kind": "simulation", "run_id": "20260613_121115_ctrl_radius_r22", "rho_name": "ctrl_radius_r22", "n_trials": 100000, "probabilities": {"1": 0.16517, "2": 0.17743, "3": 0.16739, "4": 0.16693, "5": 0.15757, "6": 0.16551}, "cancelled": false, "timestamp": "2026-06-13T04:39:40.689036+00:00", "target_trials": null, "study_id": "controlled", "top_face": "2", "top_p": 0.17743, "group_id": "controlled_study", "group_label": "변인 통제"}, {"item_id": "20260613_122013_ctrl_center_x22", "label": "ctrl_center_x22", "title": "20260613_122013_ctrl_center_x22", "density_url": "runs/20260613_122013_ctrl_center_x22/rho_density.html", "prob_url": "runs/20260613_122013_ctrl_center_x22/face_probabilities.html", "kind": "simulation", "run_id": "20260613_122013_ctrl_center_x22", "rho_name": "ctrl_center_x22", "n_trials": 100000, "probabilities": {"1": 0.1673, "2": 0.16399, "3": 0.16607, "4": 0.1649, "5": 0.17344, "6": 0.1643}, "cancelled": false, "timestamp": "2026-06-13T04:39:41.189479+00:00", "target_trials": null, "study_id": "controlled", "top_face": "5", "top_p": 0.17344, "group_id": "controlled_study", "group_label": "변인 통제"}, {"item_id": "20260613_122908_ctrl_center_x28", "label": "ctrl_center_x28", "title": "20260613_122908_ctrl_center_x28", "density_url": "runs/20260613_122908_ctrl_center_x28/rho_density.html", "prob_url": "runs/20260613_122908_ctrl_center_x28/face_probabilities.html", "kind": "simulation", "run_id": "20260613_122908_ctrl_center_x28", "rho_name": "ctrl_center_x28", "n_trials": 100000, "probabilities": {"1": 0.16624, "2": 0.15987, "3": 0.1662, "4": 0.16734, "5": 0.17415, "6": 0.1662}, "cancelled": false, "timestamp": "2026-06-13T04:39:41.723233+00:00", "target_trials": null, "study_id": "controlled", "top_face": "5", "top_p": 0.17415, "group_id": "controlled_study", "group_label": "변인 통제"}, {"item_id": "20260613_123804_ctrl_center_x32", "label": "ctrl_center_x32", "title": "20260613_123804_ctrl_center_x32", "density_url": "runs/20260613_123804_ctrl_center_x32/rho_density.html", "prob_url": "runs/20260613_123804_ctrl_center_x32/face_probabilities.html", "kind": "simulation", "run_id": "20260613_123804_ctrl_center_x32", "rho_name": "ctrl_center_x32", "n_trials": 100000, "probabilities": {"1": 0.16628, "2": 0.15776, "3": 0.16595, "4": 0.16774, "5": 0.17758, "6": 0.16469}, "cancelled": false, "timestamp": "2026-06-13T04:39:42.223927+00:00", "target_trials": null, "study_id": "controlled", "top_face": "5", "top_p": 0.17758, "group_id": "controlled_study", "group_label": "변인 통제"}, {"item_id": "01_uniform", "label": "uniform", "title": "uniform", "density_url": "studies/sphere_legacy/density_previews/01_uniform.html", "prob_url": null, "kind": "preview", "group_id": "sphere_legacy_study", "group_label": "구 밀도 실험"}, {"item_id": "02_sphere_r02_f13", "label": "sphere_r02_f13", "title": "sphere_r02_f13", "density_url": "studies/sphere_legacy/density_previews/02_sphere_r02_f13.html", "prob_url": null, "kind": "preview", "group_id": "sphere_legacy_study", "group_label": "구 밀도 실험"}, {"item_id": "03_sphere_r02_f16", "label": "sphere_r02_f16", "title": "sphere_r02_f16", "density_url": "studies/sphere_legacy/density_previews/03_sphere_r02_f16.html", "prob_url": null, "kind": "preview", "group_id": "sphere_legacy_study", "group_label": "구 밀도 실험"}, {"item_id": "04_sphere_r02_f19", "label": "sphere_r02_f19", "title": "sphere_r02_f19", "density_url": "studies/sphere_legacy/density_previews/04_sphere_r02_f19.html", "prob_url": null, "kind": "preview", "group_id": "sphere_legacy_study", "group_label": "구 밀도 실험"}, {"item_id": "05_sphere_r03_f13", "label": "sphere_r03_f13", "title": "sphere_r03_f13", "density_url": "studies/sphere_legacy/density_previews/05_sphere_r03_f13.html", "prob_url": null, "kind": "preview", "group_id": "sphere_legacy_study", "group_label": "구 밀도 실험"}, {"item_id": "06_sphere_r03_f16", "label": "sphere_r03_f16", "title": "sphere_r03_f16", "density_url": "studies/sphere_legacy/density_previews/06_sphere_r03_f16.html", "prob_url": null, "kind": "preview", "group_id": "sphere_legacy_study", "group_label": "구 밀도 실험"}, {"item_id": "07_sphere_r03_f19", "label": "sphere_r03_f19", "title": "sphere_r03_f19", "density_url": "studies/sphere_legacy/density_previews/07_sphere_r03_f19.html", "prob_url": null, "kind": "preview", "group_id": "sphere_legacy_study", "group_label": "구 밀도 실험"}];
+    let index = 0;
+    let view = "density";
+    const COMPARE_URL = "comparison.html";
+
+    const elList = document.getElementById("run-list");
+    const elSelect = document.getElementById("item-select");
+    const elViewer = document.getElementById("viewer");
+    const elInfo = document.getElementById("info-bar");
+    const elSummary = document.getElementById("summary-body");
+    const btnSidebar = document.getElementById("toggle-sidebar");
+    const btnSummary = document.getElementById("toggle-summary");
+    const navControls = document.getElementById("nav-controls");
+
+    function pct(v) { return (parseFloat(v) * 100).toFixed(2) + "%"; }
+    function probOf(probs, f) { return probs[f] ?? probs[String(f)] ?? 0; }
+
+    function setPanel(btn, cls, hidden) {
+      document.body.classList.toggle(cls, hidden);
+      btn.classList.toggle("on", !hidden);
+    }
+    btnSidebar.addEventListener("click", () => setPanel(btnSidebar, "sidebar-hidden", !document.body.classList.contains("sidebar-hidden")));
+    btnSummary.addEventListener("click", () => setPanel(btnSummary, "summary-hidden", !document.body.classList.contains("summary-hidden")));
+
+    function buildUI() {
+      elList.innerHTML = "";
+      elSelect.innerHTML = "";
+      elSummary.innerHTML = "";
+      let flatIdx = 0;
+      GROUPS.forEach(g => {
+        const gh = document.createElement("li");
+        gh.className = "group-header";
+        gh.textContent = g.label + " (" + g.items.length + ")";
+        elList.appendChild(gh);
+        g.items.forEach(item => {
+          const i = flatIdx;
+          const li = document.createElement("li");
+          li.className = "run-item" + (i === index ? " active" : "");
+          li.dataset.flatIndex = String(i);
+          const preview = item.kind === "preview" ? '<span class="tag-preview">설계</span>' : "";
+          const cancelled = item.cancelled ? ' <span class="badge">중단</span>' : "";
+          const meta = item.kind === "simulation"
+            ? (item.run_id + "<br>눈 " + item.top_face + " " + (item.top_p*100).toFixed(1) + "%")
+            : "밀도 미리보기";
+          li.innerHTML = '<div class="name">' + item.label + preview + cancelled + '</div><div class="meta">' + meta + '</div>';
+          li.addEventListener("click", () => { selectItem(i); setPanel(btnSidebar, "sidebar-hidden", true); });
+          elList.appendChild(li);
+
+          const opt = document.createElement("option");
+          opt.value = i;
+          opt.textContent = "[" + g.label.split(" — ")[0] + "] " + item.label;
+          elSelect.appendChild(opt);
+
+          if (item.kind === "simulation") {
+            const probs = item.probabilities || {};
+            const tr = document.createElement("tr");
+            tr.style.cursor = "pointer";
+            tr.addEventListener("click", () => selectItem(i));
+            tr.innerHTML = '<td>' + g.label + '</td><td>' + item.run_id + '</td><td>' + item.rho_name + '</td><td>' + item.n_trials + '</td>'
+              + '<td>' + item.top_face + ' (' + pct(item.top_p) + ')</td>'
+              + [1,2,3,4,5,6].map(f => '<td>' + (probOf(probs,f) != null ? pct(probOf(probs,f)) : "—") + '</td>').join("");
+            elSummary.appendChild(tr);
+          }
+          flatIdx++;
+        });
+      });
+    }
+
+    function currentUrl() {
+      if (view === "compare") return COMPARE_URL;
+      const it = ITEMS[index];
+      if (view === "density") return it.density_url || "";
+      return it.prob_url || "";
+    }
+
+    function updateView() {
+      const isCompare = view === "compare";
+      navControls.classList.toggle("hidden", isCompare);
+      const it = ITEMS[index];
+      elViewer.src = currentUrl();
+      elSelect.value = index;
+      document.querySelectorAll(".run-item").forEach(el => {
+        el.classList.toggle("active", parseInt(el.dataset.flatIndex, 10) === index);
+      });
+
+      if (isCompare) {
+        elInfo.textContent = "시뮬 " + 10 + "개 확률 비교";
+        document.querySelectorAll(".view-tabs button").forEach(btn => {
+          btn.classList.toggle("active", btn.dataset.view === view);
+          btn.disabled = btn.dataset.view === "compare" && 10 === 0;
+        });
+        return;
+      }
+
+      const kind = it.kind === "preview" ? "설계" : "시뮬";
+      const nLabel = it.n_trials ? ("N=" + it.n_trials) : "";
+      const top = it.top_face ? (" · 최다 눈 " + it.top_face) : "";
+      elInfo.textContent = it.group_label + " · " + it.label + " · " + kind + " " + nLabel + top;
+
+      document.querySelectorAll(".view-tabs button").forEach(btn => {
+        const v = btn.dataset.view;
+        btn.classList.toggle("active", v === view);
+        if (v === "prob") btn.disabled = !it.prob_url;
+        if (v === "density") btn.disabled = !it.density_url;
+        if (v === "compare") btn.disabled = 10 === 0;
+      });
+    }
+
+    function selectItem(i) {
+      index = Math.max(0, Math.min(ITEMS.length - 1, i));
+      if (view === "prob" && !ITEMS[index].prob_url) view = "density";
+      updateView();
+    }
+
+    function step(delta) {
+      if (view === "compare") return;
+      let i = index + delta;
+      while (i >= 0 && i < ITEMS.length) {
+        const ok = view === "density" ? ITEMS[i].density_url : ITEMS[i].prob_url;
+        if (ok) { selectItem(i); return; }
+        i += delta;
+      }
+    }
+
+    document.getElementById("btn-prev").addEventListener("click", () => step(-1));
+    document.getElementById("btn-next").addEventListener("click", () => step(1));
+    elSelect.addEventListener("change", e => selectItem(parseInt(e.target.value, 10)));
+    document.querySelectorAll(".view-tabs button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (btn.disabled) return;
+        view = btn.dataset.view;
+        if (view === "prob" && !ITEMS[index].prob_url) {
+          const j = ITEMS.findIndex(x => x.prob_url);
+          if (j >= 0) index = j;
+        }
+        updateView();
+      });
+    });
+
+    buildUI();
+    updateView();
+  </script>
+</body>
+</html>

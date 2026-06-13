@@ -587,7 +587,337 @@
         "cancelled": false,
         "study_id": "controlled"
       }
+    },
+    {
+      "run_id": "20260613_111728_uniform",
+      "timestamp": "2026-06-13T02:26:27.570471+00:00",
+      "rho_name": "uniform",
+      "n_trials": 100000,
+      "probabilities": {
+        "1": 0.16739,
+        "2": 0.16659,
+        "3": 0.16533,
+        "4": 0.16821,
+        "5": 0.16568,
+        "6": 0.1668
+      },
+      "counts": {
+        "1": 16739,
+        "2": 16659,
+        "3": 16533,
+        "4": 16821,
+        "5": 16568,
+        "6": 16680
+      },
+      "paths": {
+        "run_dir": "output/runs/20260613_111728_uniform",
+        "results_json": "output/runs/20260613_111728_uniform/results.json",
+        "face_probabilities_html": "output/runs/20260613_111728_uniform/face_probabilities.html",
+        "rho_density_html": "output/runs/20260613_111728_uniform/rho_density.html"
+      },
+      "extra": {
+        "alpha": null,
+        "face": "bottom",
+        "study_id": "controlled"
+      }
+    },
+    {
+      "run_id": "20260613_112628_ctrl_factor_f30",
+      "timestamp": "2026-06-13T02:35:26.761579+00:00",
+      "rho_name": "ctrl_factor_f30",
+      "n_trials": 100000,
+      "probabilities": {
+        "1": 0.16701,
+        "2": 0.17341,
+        "3": 0.16668,
+        "4": 0.167,
+        "5": 0.16021,
+        "6": 0.16569
+      },
+      "counts": {
+        "1": 16701,
+        "2": 17341,
+        "3": 16668,
+        "4": 16700,
+        "5": 16021,
+        "6": 16569
+      },
+      "paths": {
+        "run_dir": "output/runs/20260613_112628_ctrl_factor_f30",
+        "results_json": "output/runs/20260613_112628_ctrl_factor_f30/results.json",
+        "face_probabilities_html": "output/runs/20260613_112628_ctrl_factor_f30/face_probabilities.html",
+        "rho_density_html": "output/runs/20260613_112628_ctrl_factor_f30/rho_density.html"
+      },
+      "extra": {
+        "alpha": null,
+        "face": "bottom",
+        "study_id": "controlled"
+      }
+    },
+    {
+      "run_id": "20260613_113527_ctrl_factor_f40",
+      "timestamp": "2026-06-13T02:44:23.914958+00:00",
+      "rho_name": "ctrl_factor_f40",
+      "n_trials": 100000,
+      "probabilities": {
+        "1": 0.16611,
+        "2": 0.15843,
+        "3": 0.16585,
+        "4": 0.16686,
+        "5": 0.1763,
+        "6": 0.16645
+      },
+      "counts": {
+        "1": 16611,
+        "2": 15843,
+        "3": 16585,
+        "4": 16686,
+        "5": 17630,
+        "6": 16645
+      },
+      "paths": {
+        "run_dir": "output/runs/20260613_113527_ctrl_factor_f40",
+        "results_json": "output/runs/20260613_113527_ctrl_factor_f40/results.json",
+        "face_probabilities_html": "output/runs/20260613_113527_ctrl_factor_f40/face_probabilities.html",
+        "rho_density_html": "output/runs/20260613_113527_ctrl_factor_f40/rho_density.html"
+      },
+      "extra": {
+        "alpha": null,
+        "face": "bottom",
+        "study_id": "controlled"
+      }
+    },
+    {
+      "run_id": "20260613_114424_ctrl_factor_f50",
+      "timestamp": "2026-06-13T02:53:20.066891+00:00",
+      "rho_name": "ctrl_factor_f50",
+      "n_trials": 100000,
+      "probabilities": {
+        "1": 0.16656,
+        "2": 0.15571,
+        "3": 0.16851,
+        "4": 0.16686,
+        "5": 0.17875,
+        "6": 0.16361
+      },
+      "counts": {
+        "1": 16656,
+        "2": 15571,
+        "3": 16851,
+        "4": 16686,
+        "5": 17875,
+        "6": 16361
+      },
+      "paths": {
+        "run_dir": "output/runs/20260613_114424_ctrl_factor_f50",
+        "results_json": "output/runs/20260613_114424_ctrl_factor_f50/results.json",
+        "face_probabilities_html": "output/runs/20260613_114424_ctrl_factor_f50/face_probabilities.html",
+        "rho_density_html": "output/runs/20260613_114424_ctrl_factor_f50/rho_density.html"
+      },
+      "extra": {
+        "alpha": null,
+        "face": "bottom",
+        "study_id": "controlled"
+      }
+    },
+    {
+      "run_id": "20260613_115320_ctrl_radius_r16",
+      "timestamp": "2026-06-13T03:02:16.922784+00:00",
+      "rho_name": "ctrl_radius_r16",
+      "n_trials": 100000,
+      "probabilities": {
+        "1": 0.16436,
+        "2": 0.16388,
+        "3": 0.16667,
+        "4": 0.1656,
+        "5": 0.17125,
+        "6": 0.16824
+      },
+      "counts": {
+        "1": 16436,
+        "2": 16388,
+        "3": 16667,
+        "4": 16560,
+        "5": 17125,
+        "6": 16824
+      },
+      "paths": {
+        "run_dir": "output/runs/20260613_115320_ctrl_radius_r16",
+        "results_json": "output/runs/20260613_115320_ctrl_radius_r16/results.json",
+        "face_probabilities_html": "output/runs/20260613_115320_ctrl_radius_r16/face_probabilities.html",
+        "rho_density_html": "output/runs/20260613_115320_ctrl_radius_r16/rho_density.html"
+      },
+      "extra": {
+        "alpha": null,
+        "face": "bottom",
+        "study_id": "controlled"
+      }
+    },
+    {
+      "run_id": "20260613_120217_ctrl_radius_r20",
+      "timestamp": "2026-06-13T03:11:15.365196+00:00",
+      "rho_name": "ctrl_radius_r20",
+      "n_trials": 100000,
+      "probabilities": {
+        "1": 0.16598,
+        "2": 0.16034,
+        "3": 0.16509,
+        "4": 0.16673,
+        "5": 0.17611,
+        "6": 0.16575
+      },
+      "counts": {
+        "1": 16598,
+        "2": 16034,
+        "3": 16509,
+        "4": 16673,
+        "5": 17611,
+        "6": 16575
+      },
+      "paths": {
+        "run_dir": "output/runs/20260613_120217_ctrl_radius_r20",
+        "results_json": "output/runs/20260613_120217_ctrl_radius_r20/results.json",
+        "face_probabilities_html": "output/runs/20260613_120217_ctrl_radius_r20/face_probabilities.html",
+        "rho_density_html": "output/runs/20260613_120217_ctrl_radius_r20/rho_density.html"
+      },
+      "extra": {
+        "alpha": null,
+        "face": "bottom",
+        "study_id": "controlled"
+      }
+    },
+    {
+      "run_id": "20260613_121115_ctrl_radius_r22",
+      "timestamp": "2026-06-13T03:20:12.715245+00:00",
+      "rho_name": "ctrl_radius_r22",
+      "n_trials": 100000,
+      "probabilities": {
+        "1": 0.16517,
+        "2": 0.17743,
+        "3": 0.16739,
+        "4": 0.16693,
+        "5": 0.15757,
+        "6": 0.16551
+      },
+      "counts": {
+        "1": 16517,
+        "2": 17743,
+        "3": 16739,
+        "4": 16693,
+        "5": 15757,
+        "6": 16551
+      },
+      "paths": {
+        "run_dir": "output/runs/20260613_121115_ctrl_radius_r22",
+        "results_json": "output/runs/20260613_121115_ctrl_radius_r22/results.json",
+        "face_probabilities_html": "output/runs/20260613_121115_ctrl_radius_r22/face_probabilities.html",
+        "rho_density_html": "output/runs/20260613_121115_ctrl_radius_r22/rho_density.html"
+      },
+      "extra": {
+        "alpha": null,
+        "face": "bottom",
+        "study_id": "controlled"
+      }
+    },
+    {
+      "run_id": "20260613_122013_ctrl_center_x22",
+      "timestamp": "2026-06-13T03:29:07.591987+00:00",
+      "rho_name": "ctrl_center_x22",
+      "n_trials": 100000,
+      "probabilities": {
+        "1": 0.1673,
+        "2": 0.16399,
+        "3": 0.16607,
+        "4": 0.1649,
+        "5": 0.17344,
+        "6": 0.1643
+      },
+      "counts": {
+        "1": 16730,
+        "2": 16399,
+        "3": 16607,
+        "4": 16490,
+        "5": 17344,
+        "6": 16430
+      },
+      "paths": {
+        "run_dir": "output/runs/20260613_122013_ctrl_center_x22",
+        "results_json": "output/runs/20260613_122013_ctrl_center_x22/results.json",
+        "face_probabilities_html": "output/runs/20260613_122013_ctrl_center_x22/face_probabilities.html",
+        "rho_density_html": "output/runs/20260613_122013_ctrl_center_x22/rho_density.html"
+      },
+      "extra": {
+        "alpha": null,
+        "face": "bottom",
+        "study_id": "controlled"
+      }
+    },
+    {
+      "run_id": "20260613_122908_ctrl_center_x28",
+      "timestamp": "2026-06-13T03:38:03.734487+00:00",
+      "rho_name": "ctrl_center_x28",
+      "n_trials": 100000,
+      "probabilities": {
+        "1": 0.16624,
+        "2": 0.15987,
+        "3": 0.1662,
+        "4": 0.16734,
+        "5": 0.17415,
+        "6": 0.1662
+      },
+      "counts": {
+        "1": 16624,
+        "2": 15987,
+        "3": 16620,
+        "4": 16734,
+        "5": 17415,
+        "6": 16620
+      },
+      "paths": {
+        "run_dir": "output/runs/20260613_122908_ctrl_center_x28",
+        "results_json": "output/runs/20260613_122908_ctrl_center_x28/results.json",
+        "face_probabilities_html": "output/runs/20260613_122908_ctrl_center_x28/face_probabilities.html",
+        "rho_density_html": "output/runs/20260613_122908_ctrl_center_x28/rho_density.html"
+      },
+      "extra": {
+        "alpha": null,
+        "face": "bottom",
+        "study_id": "controlled"
+      }
+    },
+    {
+      "run_id": "20260613_123804_ctrl_center_x32",
+      "timestamp": "2026-06-13T03:46:59.481133+00:00",
+      "rho_name": "ctrl_center_x32",
+      "n_trials": 100000,
+      "probabilities": {
+        "1": 0.16628,
+        "2": 0.15776,
+        "3": 0.16595,
+        "4": 0.16774,
+        "5": 0.17758,
+        "6": 0.16469
+      },
+      "counts": {
+        "1": 16628,
+        "2": 15776,
+        "3": 16595,
+        "4": 16774,
+        "5": 17758,
+        "6": 16469
+      },
+      "paths": {
+        "run_dir": "output/runs/20260613_123804_ctrl_center_x32",
+        "results_json": "output/runs/20260613_123804_ctrl_center_x32/results.json",
+        "face_probabilities_html": "output/runs/20260613_123804_ctrl_center_x32/face_probabilities.html",
+        "rho_density_html": "output/runs/20260613_123804_ctrl_center_x32/rho_density.html"
+      },
+      "extra": {
+        "alpha": null,
+        "face": "bottom",
+        "study_id": "controlled"
+      }
     }
   ],
-  "last_updated": "2026-06-13T01:40:34.126167+00:00"
+  "last_updated": "2026-06-13T03:46:59.481133+00:00"
 }

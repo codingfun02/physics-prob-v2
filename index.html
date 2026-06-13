@@ -250,11 +250,18 @@
         height: 100%;
         height: 100dvh;
         overflow: hidden;
-        position: fixed;
         width: 100%;
+        overscroll-behavior: none;
+      }
+      body {
+        padding: 0;
       }
       .brand { display: none; }
       header {
+        position: relative;
+        flex-shrink: 0;
+        z-index: 120;
+        background: var(--surface);
         padding: 6px 10px;
         padding-top: max(6px, env(safe-area-inset-top));
         gap: 4px;
@@ -310,7 +317,13 @@
         font-size: 0.82rem;
         padding: 6px 10px;
       }
-      .layout { flex: 1; flex-direction: column; min-height: 0; }
+      .layout {
+        flex: 1;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
       main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
       aside {
         width: 100%;
@@ -329,9 +342,17 @@
         flex: 1 1 0;
         width: 100%;
         min-height: 0;
+        overflow: hidden;
         -webkit-overflow-scrolling: touch;
       }
-      .viewer-wrap.density-view { padding: 4px; }
+      body.compare-view .viewer-wrap {
+        overflow: hidden;
+      }
+      body.compare-view iframe {
+        display: block;
+        height: 100%;
+      }
+      .viewer-wrap.density-view { padding: 4px 0 4px 4px; }
       iframe { min-height: 0; height: 100%; touch-action: manipulation; }
     }
   </style>
@@ -370,7 +391,7 @@
   <script>
     const STUDIES = [{"label": "변인 통제 v2", "groups": [{"label": "기준선 — 균일 밀도 ρ=1", "items": [{"display_label": "ρ=1", "cancelled": false}]}, {"label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "items": [{"display_label": "ρ=3", "cancelled": false}, {"display_label": "ρ=4", "cancelled": false}, {"display_label": "ρ=5", "cancelled": false}]}, {"label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "items": [{"display_label": "반지름=0.16", "cancelled": false}, {"display_label": "반지름=0.2", "cancelled": false}, {"display_label": "반지름=0.22", "cancelled": false}]}, {"label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "items": [{"display_label": "편심x좌표=0.22", "cancelled": false}, {"display_label": "편심x좌표=0.28", "cancelled": false}, {"display_label": "편심x좌표=0.32", "cancelled": false}]}]}];
     const ITEMS = [{"display_label": "ρ=1", "density_url": "runs/20260613_111728_uniform/rho_density.html", "prob_url": "runs/20260613_111728_uniform/face_probabilities.html", "cancelled": false, "group_id": "controlled_uniform", "group_label": "기준선 — 균일 밀도 ρ=1", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_균일 (N=100000)", "png_density": "질량_균일"}, {"display_label": "ρ=3", "density_url": "runs/20260613_112628_ctrl_factor_f30/rho_density.html", "prob_url": "runs/20260613_112628_ctrl_factor_f30/face_probabilities.html", "cancelled": false, "group_id": "controlled_factor", "group_label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_밀도3 (편심0.28 반지름0.2 N=100000)", "png_density": "질량_밀도3 (편심0.28 반지름0.2)"}, {"display_label": "ρ=4", "density_url": "runs/20260613_113527_ctrl_factor_f40/rho_density.html", "prob_url": "runs/20260613_113527_ctrl_factor_f40/face_probabilities.html", "cancelled": false, "group_id": "controlled_factor", "group_label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_밀도4 (편심0.28 반지름0.2 N=100000)", "png_density": "질량_밀도4 (편심0.28 반지름0.2)"}, {"display_label": "ρ=5", "density_url": "runs/20260613_114424_ctrl_factor_f50/rho_density.html", "prob_url": "runs/20260613_114424_ctrl_factor_f50/face_probabilities.html", "cancelled": false, "group_id": "controlled_factor", "group_label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_밀도5 (편심0.28 반지름0.2 N=100000)", "png_density": "질량_밀도5 (편심0.28 반지름0.2)"}, {"display_label": "반지름=0.16", "density_url": "runs/20260613_115320_ctrl_radius_r16/rho_density.html", "prob_url": "runs/20260613_115320_ctrl_radius_r16/face_probabilities.html", "cancelled": false, "group_id": "controlled_radius", "group_label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_반지름0.16 (편심0.28 밀도4 N=100000)", "png_density": "질량_반지름0.16 (편심0.28 밀도4)"}, {"display_label": "반지름=0.2", "density_url": "runs/20260613_120217_ctrl_radius_r20/rho_density.html", "prob_url": "runs/20260613_120217_ctrl_radius_r20/face_probabilities.html", "cancelled": false, "group_id": "controlled_radius", "group_label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_반지름0.2 (편심0.28 밀도4 N=100000)", "png_density": "질량_반지름0.2 (편심0.28 밀도4)"}, {"display_label": "반지름=0.22", "density_url": "runs/20260613_121115_ctrl_radius_r22/rho_density.html", "prob_url": "runs/20260613_121115_ctrl_radius_r22/face_probabilities.html", "cancelled": false, "group_id": "controlled_radius", "group_label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_반지름0.22 (편심0.28 밀도4 N=100000)", "png_density": "질량_반지름0.22 (편심0.28 밀도4)"}, {"display_label": "편심x좌표=0.22", "density_url": "runs/20260613_122013_ctrl_center_x22/rho_density.html", "prob_url": "runs/20260613_122013_ctrl_center_x22/face_probabilities.html", "cancelled": false, "group_id": "controlled_center", "group_label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_편심0.22 (반지름0.18 밀도4 N=100000)", "png_density": "질량_편심0.22 (반지름0.18 밀도4)"}, {"display_label": "편심x좌표=0.28", "density_url": "runs/20260613_122908_ctrl_center_x28/rho_density.html", "prob_url": "runs/20260613_122908_ctrl_center_x28/face_probabilities.html", "cancelled": false, "group_id": "controlled_center", "group_label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_편심0.28 (반지름0.18 밀도4 N=100000)", "png_density": "질량_편심0.28 (반지름0.18 밀도4)"}, {"display_label": "편심x좌표=0.32", "density_url": "runs/20260613_123804_ctrl_center_x32/rho_density.html", "prob_url": "runs/20260613_123804_ctrl_center_x32/face_probabilities.html", "cancelled": false, "group_id": "controlled_center", "group_label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_편심0.32 (반지름0.18 밀도4 N=100000)", "png_density": "질량_편심0.32 (반지름0.18 밀도4)"}];
-    const CHART_CACHE_V = "1781343324";
+    const CHART_CACHE_V = "1781349526";
     let index = 0;
     let view = "density";
     let currentSrc = "";
@@ -550,19 +571,39 @@
     }
 
     let resizeTimer = null;
+
+    function syncCompareIframeHeight() {
+      if (view !== "compare" || !window.matchMedia("(max-width: 768px)").matches) return;
+      const wrap = document.querySelector(".viewer-wrap");
+      if (!wrap) return;
+      elViewer.style.height = Math.max(200, wrap.clientHeight) + "px";
+    }
+
     function resizeViewer() {
       const header = document.querySelector("header");
       const wrap = document.querySelector(".viewer-wrap");
       const iframe = document.getElementById("viewer");
       if (!header || !wrap || !iframe) return;
       if (window.matchMedia("(max-width: 768px)").matches) {
-        const vv = window.visualViewport;
-        const vh = vv ? vv.height : window.innerHeight;
-        const top = vv ? vv.offsetTop : 0;
-        const h = Math.max(220, vh - header.offsetHeight - top);
-        wrap.style.height = h + "px";
+        wrap.style.height = "";
         wrap.style.flex = "1 1 auto";
-        iframe.style.height = h + "px";
+        const wrapH = Math.max(200, wrap.clientHeight || 0);
+        if (view === "compare") {
+          wrap.style.overflowY = "hidden";
+          iframe.style.height = wrapH + "px";
+          iframe.style.minHeight = "";
+          iframe.scrolling = "no";
+        } else {
+          wrap.style.overflowY = "hidden";
+          iframe.style.height = "100%";
+          iframe.style.minHeight = "";
+          iframe.scrolling = "no";
+        }
+        if (view === "compare") {
+          syncCompareIframeHeight();
+          setTimeout(syncCompareIframeHeight, 150);
+          setTimeout(syncCompareIframeHeight, 500);
+        }
       } else {
         wrap.style.height = "";
         wrap.style.flex = "";
@@ -663,10 +704,12 @@
 
     function updateView() {
       const isCompare = view === "compare";
-      navControls.classList.toggle("hidden", isCompare);
+      document.body.classList.toggle("compare-view", isCompare);
+      navControls.classList.remove("hidden");
       const it = ITEMS[index];
       if (viewerWrap) {
         viewerWrap.classList.toggle("density-view", view === "density" && !isCompare);
+        if (isCompare) viewerWrap.scrollTop = 0;
       }
       if (btnExportGroup) {
         const sid = it.study_id;
@@ -744,6 +787,11 @@
         const plot = doc && doc.querySelector(".js-plotly-plot");
         if (plot && elViewer.contentWindow.Plotly) {
           elViewer.contentWindow.Plotly.Plots.resize(plot);
+        }
+        if (view === "compare" && doc) {
+          syncCompareIframeHeight();
+          setTimeout(syncCompareIframeHeight, 150);
+          setTimeout(syncCompareIframeHeight, 500);
         }
       } catch (e) { /* plotly 3d */ }
     });

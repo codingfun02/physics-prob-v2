@@ -30,6 +30,7 @@
   var _TITLE_MAIN_MOBILE = 27;
   var _TITLE_SUB_MOBILE = 22;
   var _BAR_LABEL_MOBILE = 10;
+  var _PROB_REF_LINE_WIDTH_MOBILE = 1.0;
   var _DENSITY_MARGIN_R_MOBILE = 0;
   var _DENSITY_COLORBAR_X_MOBILE = 1.0;
   var _DENSITY_COLORBAR_XANCHOR_MOBILE = "right";
@@ -68,6 +69,33 @@
     };
   }
 
+  function _uniformRefLineTrace(plot) {
+    for (var i = 0; i < (plot.data || []).length; i++) {
+      var tr = plot.data[i];
+      if (tr.type === "scatter" && tr.mode === "lines" && tr.name && tr.name.indexOf("균일") === 0) {
+        return i;
+      }
+    }
+    return null;
+  }
+
+  function _uniformRefLineWidthMobile(plot) {
+    var w = (plot && plot.clientWidth) || document.documentElement.clientWidth || 390;
+    var scale = Math.min(1, Math.max(0.5, w / 520));
+    return Math.round(Math.max(0.6, _PROB_REF_LINE_WIDTH_MOBILE * scale) * 10) / 10;
+  }
+
+  function _restyleUniformRefLine(plot, width) {
+    var idx = _uniformRefLineTrace(plot);
+    if (idx == null) return Promise.resolve();
+    return window.Plotly.restyle(plot, { "line.width": [width] }, [idx]);
+  }
+
+  function _applyUniformRefLineMobile(plot) {
+    if (_CHART_KIND !== "probability" && _CHART_KIND !== "comparison") return Promise.resolve();
+    return _restyleUniformRefLine(plot, _uniformRefLineWidthMobile(plot));
+  }
+
   function _comparisonBarCount(plot) {
     var n = 0;
     for (var i = 0; i < (plot.data || []).length; i++) {
@@ -76,31 +104,67 @@
     return n;
   }
 
-  function _comparisonPlotHeight(plot) {
-    var bars = _comparisonBarCount(plot);
-    var legendRows = Math.max(1, Math.ceil(bars / 2));
-    var vh = window.innerHeight || 640;
-    return Math.max(560, Math.round(vh * 0.68 + legendRows * 34 + 96));
+  function _comparisonLegendRows(plot) {
+    return Math.max(1, Math.ceil(_comparisonBarCount(plot) / 2));
+  }
+
+  function _comparisonTopMargin(plot) {
+    var sizes = _fitTitleSizes(plot);
+    var gap = _TITLE_GAP_MOBILE != null ? _TITLE_GAP_MOBILE : 0;
+    return Math.round(sizes.main + sizes.sub + gap + 10);
   }
 
   function _comparisonBottomMargin(plot) {
-    var legendRows = Math.max(1, Math.ceil(_comparisonBarCount(plot) / 2));
-    return 56 + legendRows * 24;
+    return Math.round(12 + _comparisonLegendRows(plot) * 11);
+  }
+
+  function _comparisonLegendY(plot) {
+    var rows = _comparisonLegendRows(plot);
+    return -(0.035 + (rows - 1) * 0.016);
   }
 
   function _prepareComparisonMobile(plot) {
     if (_CHART_KIND !== "comparison" || !_isMobile() || !plot) return;
-    var h = _comparisonPlotHeight(plot);
-    plot.style.minHeight = h + "px";
-    plot.style.height = h + "px";
-    document.documentElement.style.minHeight = h + "px";
-    document.body.style.minHeight = h + "px";
+    var h = document.documentElement.clientHeight || window.innerHeight || 640;
+    document.documentElement.style.height = h + "px";
+    document.body.style.height = h + "px";
+    plot.style.height = "100%";
+    plot.style.minHeight = "0";
     var el = plot.parentElement;
     while (el && el !== document.body) {
-      el.style.height = "auto";
-      el.style.minHeight = h + "px";
+      el.style.height = "100%";
+      el.style.minHeight = "0";
       el = el.parentElement;
     }
+  }
+
+  function _comparisonMobileRelayout(plot) {
+    var sizes = _fitTitleSizes(plot);
+    var upd = _applyTitleGapMobile({});
+    upd["title.font.size"] = sizes.main;
+    upd["title.subtitle.font.size"] = sizes.sub;
+    upd["title.pad.t"] = 2;
+    Object.assign(upd, {
+      margin: {
+        t: _comparisonTopMargin(plot),
+        r: 8,
+        l: 36,
+        b: _comparisonBottomMargin(plot),
+      },
+      legend: {
+        orientation: "h",
+        x: 0.5,
+        xanchor: "center",
+        y: _comparisonLegendY(plot),
+        yanchor: "top",
+        font: { size: 7 },
+        tracegroupgap: 1,
+      },
+    });
+    return window.Plotly.relayout(plot, upd).then(function() {
+      _prepareComparisonMobile(plot);
+      return _applyUniformRefLineMobile(plot);
+    });
   }
 
   function _isMobile() {
@@ -147,6 +211,8 @@
         yanchor: ly.legend.yanchor,
         font: ly.legend.font ? { size: ly.legend.font.size } : undefined,
       } : null,
+      uniformRefLineTrace: null,
+      uniformRefLineWidth: null,
       sceneDomain: null,
       sceneAxisX: null,
       sceneAxisY: null,
@@ -162,6 +228,13 @@
       var tf = plot.data[i].textfont;
       _layoutDesktop.textLabelSizes.push(tf && tf.size != null ? tf.size : null);
     });
+    if (_CHART_KIND === "probability" || _CHART_KIND === "comparison") {
+      _layoutDesktop.uniformRefLineTrace = _uniformRefLineTrace(plot);
+      if (_layoutDesktop.uniformRefLineTrace != null) {
+        var ln = plot.data[_layoutDesktop.uniformRefLineTrace].line;
+        _layoutDesktop.uniformRefLineWidth = ln && ln.width != null ? ln.width : 1.5;
+      }
+    }
     if (_CHART_KIND === "density" && ly.scene && ly.scene.domain) {
       _layoutDesktop.sceneDomain = {
         x: (ly.scene.domain.x || []).slice(),
@@ -201,7 +274,7 @@
   }
 
   function _applyTitleSizeMobile(upd, plot) {
-    if (_CHART_KIND === "density" || _CHART_KIND === "probability") {
+    if (_CHART_KIND === "density" || _CHART_KIND === "probability" || _CHART_KIND === "comparison") {
       var sizes = _fitTitleSizes(plot);
       upd["title.font.size"] = sizes.main;
       upd["title.subtitle.font.size"] = sizes.sub;
@@ -317,24 +390,12 @@
             _layoutDesktop.textLabelTraces
           );
         }
+      }).then(function() {
+        return _applyUniformRefLineMobile(plot);
       });
     }
     if (_CHART_KIND === "comparison") {
-      var bMargin = _comparisonBottomMargin(plot);
-      Object.assign(upd, {
-        margin: { t: t, r: 12, l: 40, b: bMargin },
-        legend: {
-          orientation: "h",
-          x: 0.5,
-          xanchor: "center",
-          y: -0.28 - Math.max(0, _comparisonBarCount(plot) - 4) * 0.04,
-          yanchor: "top",
-          font: { size: 8 },
-        },
-      });
-      return window.Plotly.relayout(plot, upd).then(function() {
-        _prepareComparisonMobile(plot);
-      });
+      return _comparisonMobileRelayout(plot);
     }
     if (_CHART_KIND === "density") {
       return _densityMobileRelayout(plot);
@@ -385,6 +446,14 @@
           [_layoutDesktop.colorbarTrace]
         );
       }
+    }).then(function() {
+      if (
+        (_CHART_KIND === "probability" || _CHART_KIND === "comparison")
+        && _layoutDesktop.uniformRefLineTrace != null
+        && _layoutDesktop.uniformRefLineWidth != null
+      ) {
+        return _restyleUniformRefLine(plot, _layoutDesktop.uniformRefLineWidth);
+      }
     });
   }
 
@@ -430,6 +499,6 @@
 <meta charset="utf-8" /></head>
 <body>
     <div style="height:100%; width:100%;">                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
-        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.6.0.min.js" integrity="sha256-QaOVwtVY0T02VaHrr6pnoHLCwayMJp4O5n4YyaE3rJk=" crossorigin="anonymous"></script>                <div id="480e32f1-ef7e-4d5d-b2da-aa1153cde6e5" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("480e32f1-ef7e-4d5d-b2da-aa1153cde6e5")) {                    Plotly.newPlot(                        "480e32f1-ef7e-4d5d-b2da-aa1153cde6e5",                        [{"error_y":{"array":[0.0011802995806150234,0.001170885476466422,0.0011768209511221323,0.001173490477166304,0.0011973243771008757,0.0011717743383433518],"arrayminus":[0.0011802995806150234,0.001170885476466422,0.0011768209511221323,0.001173490477166304,0.0011973243771008757,0.0011717743383433518],"color":"#384860","thickness":1.2,"type":"data","width":3},"hovertemplate":"바닥의 눈 %{x}\u003cbr\u003e확률: %{y:.4f} (%{y:.2%})\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":["#8cc5e3","#e85d5d","#8cc5e3","#e85d5d","#8cc5e3","#e85d5d"],"line":{"width":0}},"name":"확률","x":[1,2,3,4,5,6],"y":[0.1673,0.16399,0.16607,0.1649,0.17344,0.1643],"type":"bar"},{"hoverinfo":"skip","mode":"text","showlegend":false,"text":["16.73%","16.40%","16.61%","16.49%","17.34%","16.43%"],"textfont":{"color":"#384860","family":"Arial, Helvetica, sans-serif","size":17},"x":[1,2,3,4,5,6],"y":[0.16988029958061504,0.16656088547646644,0.16864682095112213,0.1674734904771663,0.1760373243771009,0.16687177433834335],"type":"scatter"},{"hovertemplate":"균일 확률: 16.67%\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#384860","dash":"dash","width":3},"mode":"lines","name":"균일 (1\u002f6)","x":[0.4,6.6],"y":[0.16666666666666666,0.16666666666666666],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"color":"#384860","size":13,"family":"Arial, Helvetica, sans-serif"},"xaxis":{"title":{"font":{"size":15},"text":"바닥의 눈"},"tickfont":{"size":14},"range":[0.3,6.7],"tickmode":"linear","dtick":1,"showgrid":false,"linecolor":"#b8b8b8","tickcolor":"#b8b8b8","zeroline":false},"yaxis":{"title":{"font":{"size":15},"text":"확률"},"tickfont":{"size":14},"range":[0.14,0.21],"tickmode":"linear","dtick":0.01,"tickformat":".1%","showgrid":true,"gridcolor":"#e8e8e8","gridwidth":1,"linecolor":"#b8b8b8","tickcolor":"#b8b8b8","zeroline":false},"legend":{"font":{"size":13},"bgcolor":"rgba(255, 255, 255, 0.92)","bordercolor":"#b8b8b8","borderwidth":1,"x":1.0,"y":0.98,"xanchor":"left","yanchor":"top"},"margin":{"t":92,"b":72,"l":90,"r":130},"plot_bgcolor":"white","paper_bgcolor":"white","bargap":0.28,"title":{"font":{"size":30,"color":"#0f172a"},"pad":{"t":6,"b":6},"subtitle":{"font":{"size":24,"color":"#0f172a"},"text":"(반지름=0.18, 밀도=4 일정, N=100,000)"},"text":"\u003cb\u003e바닥의 눈의 확률분포 (편심 x좌표=0.22)\u003c\u002fb\u003e","x":0.5,"xanchor":"center"},"autosize":true},                        {"responsive": true, "displayModeBar": true, "modeBarButtonsToRemove": ["sendDataToCloud"]}                    )                };            </script><script>if(window._earlyMobileLayout){window._earlyMobileLayout();}</script>        </div>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.6.0.min.js" integrity="sha256-QaOVwtVY0T02VaHrr6pnoHLCwayMJp4O5n4YyaE3rJk=" crossorigin="anonymous"></script>                <div id="124f85de-7c0e-4aec-82d7-b34e6cca2f05" class="plotly-graph-div" style="height:100%; width:100%;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("124f85de-7c0e-4aec-82d7-b34e6cca2f05")) {                    Plotly.newPlot(                        "124f85de-7c0e-4aec-82d7-b34e6cca2f05",                        [{"error_y":{"array":[0.0011802995806150234,0.001170885476466422,0.0011768209511221323,0.001173490477166304,0.0011973243771008757,0.0011717743383433518],"arrayminus":[0.0011802995806150234,0.001170885476466422,0.0011768209511221323,0.001173490477166304,0.0011973243771008757,0.0011717743383433518],"color":"#384860","thickness":1.2,"type":"data","width":3},"hovertemplate":"바닥의 눈 %{x}\u003cbr\u003e확률: %{y:.4f} (%{y:.2%})\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":["#8cc5e3","#e85d5d","#8cc5e3","#e85d5d","#8cc5e3","#e85d5d"],"line":{"width":0}},"name":"확률","x":[1,2,3,4,5,6],"y":[0.1673,0.16399,0.16607,0.1649,0.17344,0.1643],"type":"bar"},{"hoverinfo":"skip","mode":"text","showlegend":false,"text":["16.73%","16.40%","16.61%","16.49%","17.34%","16.43%"],"textfont":{"color":"#384860","family":"Arial, Helvetica, sans-serif","size":17},"x":[1,2,3,4,5,6],"y":[0.16988029958061504,0.16656088547646644,0.16864682095112213,0.1674734904771663,0.1760373243771009,0.16687177433834335],"type":"scatter"},{"hovertemplate":"균일 확률: 16.67%\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"#ffa600","dash":"dash","width":1.5},"mode":"lines","name":"균일 (1\u002f6)","x":[0.4,6.6],"y":[0.16666666666666666,0.16666666666666666],"type":"scatter"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"font":{"color":"#384860","size":13,"family":"Arial, Helvetica, sans-serif"},"xaxis":{"title":{"font":{"size":15},"text":"바닥의 눈"},"tickfont":{"size":14},"range":[0.3,6.7],"tickmode":"linear","dtick":1,"showgrid":false,"linecolor":"#b8b8b8","tickcolor":"#b8b8b8","zeroline":false},"yaxis":{"title":{"font":{"size":15},"text":"확률"},"tickfont":{"size":14},"range":[0.14,0.21],"tickmode":"linear","dtick":0.01,"tickformat":".1%","showgrid":true,"gridcolor":"#e8e8e8","gridwidth":1,"linecolor":"#b8b8b8","tickcolor":"#b8b8b8","zeroline":false},"legend":{"font":{"size":13},"bgcolor":"rgba(255, 255, 255, 0.92)","bordercolor":"#b8b8b8","borderwidth":1,"x":1.0,"y":0.98,"xanchor":"left","yanchor":"top"},"margin":{"t":92,"b":72,"l":90,"r":130},"plot_bgcolor":"white","paper_bgcolor":"white","bargap":0.28,"title":{"font":{"size":30,"color":"#0f172a"},"pad":{"t":6,"b":6},"subtitle":{"font":{"size":24,"color":"#0f172a"},"text":"(반지름=0.18, 밀도=4 일정, N=100,000)"},"text":"\u003cb\u003e바닥의 눈의 확률분포 (편심 x좌표=0.22)\u003c\u002fb\u003e","x":0.5,"xanchor":"center"},"autosize":true},                        {"responsive": true, "displayModeBar": true, "modeBarButtonsToRemove": ["sendDataToCloud"]}                    )                };            </script><script>if(window._earlyMobileLayout){window._earlyMobileLayout();}</script>        </div>
 </body>
 </html>

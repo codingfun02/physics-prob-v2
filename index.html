@@ -27,6 +27,7 @@
       flex-direction: column;
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     }
     header {
       flex-shrink: 0;
@@ -255,68 +256,83 @@
       .brand { display: none; }
       header {
         padding: 6px 10px;
-        gap: 6px;
+        padding-top: max(6px, env(safe-area-inset-top));
+        gap: 4px;
         flex-wrap: nowrap;
       }
       .toolbar {
         width: 100%;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        grid-template-rows: auto auto;
+        gap: 4px 6px;
         align-items: stretch;
-        gap: 6px;
       }
       .nav-controls {
-        order: 1;
+        grid-column: 1 / -1;
+        order: unset;
         max-width: none;
         width: 100%;
       }
       .nav-controls button {
-        width: 56px;
-        min-height: 56px;
-        font-size: 1.75rem;
+        width: 52px;
+        min-height: 48px;
+        font-size: 1.6rem;
       }
       .nav-current {
-        font-size: 1.1rem;
-        min-height: 56px;
+        font-size: 1rem;
+        min-height: 48px;
       }
       .view-tabs {
-        order: 2;
-        width: 100%;
+        grid-column: 1 / 2;
+        order: unset;
+        width: auto;
       }
       .view-tabs button {
         flex: 1;
-        padding: 8px 4px;
-        font-size: 0.8rem;
-      }
-      .panel-toggle {
-        order: 3;
-        width: 100%;
-        min-height: 40px;
-        font-size: 0.85rem;
-      }
-      .export-btn {
-        order: 3;
-        width: 100%;
-        min-height: 40px;
+        padding: 7px 4px;
+        font-size: 0.78rem;
       }
       #btn-export-group {
-        order: 2;
+        grid-column: 2 / 3;
+        order: unset;
+        width: auto;
+        min-height: 38px;
+        padding: 6px 10px;
+        font-size: 0.72rem;
+      }
+      .panel-toggle {
+        grid-column: 3 / 4;
+        order: unset;
+        width: auto;
+        min-width: 48px;
+        min-height: 38px;
+        font-size: 0.82rem;
+        padding: 6px 10px;
       }
       .layout { flex: 1; flex-direction: column; min-height: 0; }
-      main { flex: 1; min-height: 0; }
+      main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
       aside {
         width: 100%;
         position: fixed;
         left: 0;
         right: 0;
         bottom: 0;
-        max-height: 55vh;
+        max-height: min(55dvh, 420px);
+        padding-bottom: env(safe-area-inset-bottom);
         z-index: 50;
         box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.25);
         border-radius: 14px 14px 0 0;
       }
       body.sidebar-hidden aside { display: none; }
-      .viewer-wrap { flex: 1; width: 100%; min-height: 0; }
-      iframe { min-height: 0; height: 100%; }
+      .viewer-wrap {
+        flex: 1 1 0;
+        width: 100%;
+        min-height: 0;
+        -webkit-overflow-scrolling: touch;
+      }
+      .viewer-wrap.density-view { padding: 4px; }
+      iframe { min-height: 0; height: 100%; touch-action: manipulation; }
     }
   </style>
 </head>
@@ -354,7 +370,7 @@
   <script>
     const STUDIES = [{"label": "변인 통제 v2", "groups": [{"label": "기준선 — 균일 밀도 ρ=1", "items": [{"display_label": "ρ=1", "cancelled": false}]}, {"label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "items": [{"display_label": "ρ=3", "cancelled": false}, {"display_label": "ρ=4", "cancelled": false}, {"display_label": "ρ=5", "cancelled": false}]}, {"label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "items": [{"display_label": "반지름=0.16", "cancelled": false}, {"display_label": "반지름=0.2", "cancelled": false}, {"display_label": "반지름=0.22", "cancelled": false}]}, {"label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "items": [{"display_label": "편심x좌표=0.22", "cancelled": false}, {"display_label": "편심x좌표=0.28", "cancelled": false}, {"display_label": "편심x좌표=0.32", "cancelled": false}]}]}];
     const ITEMS = [{"display_label": "ρ=1", "density_url": "runs/20260613_111728_uniform/rho_density.html", "prob_url": "runs/20260613_111728_uniform/face_probabilities.html", "cancelled": false, "group_id": "controlled_uniform", "group_label": "기준선 — 균일 밀도 ρ=1", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_균일 (N=100000)", "png_density": "질량_균일"}, {"display_label": "ρ=3", "density_url": "runs/20260613_112628_ctrl_factor_f30/rho_density.html", "prob_url": "runs/20260613_112628_ctrl_factor_f30/face_probabilities.html", "cancelled": false, "group_id": "controlled_factor", "group_label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_밀도3 (편심0.28 반지름0.2 N=100000)", "png_density": "질량_밀도3 (편심0.28 반지름0.2)"}, {"display_label": "ρ=4", "density_url": "runs/20260613_113527_ctrl_factor_f40/rho_density.html", "prob_url": "runs/20260613_113527_ctrl_factor_f40/face_probabilities.html", "cancelled": false, "group_id": "controlled_factor", "group_label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_밀도4 (편심0.28 반지름0.2 N=100000)", "png_density": "질량_밀도4 (편심0.28 반지름0.2)"}, {"display_label": "ρ=5", "density_url": "runs/20260613_114424_ctrl_factor_f50/rho_density.html", "prob_url": "runs/20260613_114424_ctrl_factor_f50/face_probabilities.html", "cancelled": false, "group_id": "controlled_factor", "group_label": "변인: ρ (편심x좌표=0.28, 반지름=0.2 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_밀도5 (편심0.28 반지름0.2 N=100000)", "png_density": "질량_밀도5 (편심0.28 반지름0.2)"}, {"display_label": "반지름=0.16", "density_url": "runs/20260613_115320_ctrl_radius_r16/rho_density.html", "prob_url": "runs/20260613_115320_ctrl_radius_r16/face_probabilities.html", "cancelled": false, "group_id": "controlled_radius", "group_label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_반지름0.16 (편심0.28 밀도4 N=100000)", "png_density": "질량_반지름0.16 (편심0.28 밀도4)"}, {"display_label": "반지름=0.2", "density_url": "runs/20260613_120217_ctrl_radius_r20/rho_density.html", "prob_url": "runs/20260613_120217_ctrl_radius_r20/face_probabilities.html", "cancelled": false, "group_id": "controlled_radius", "group_label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_반지름0.2 (편심0.28 밀도4 N=100000)", "png_density": "질량_반지름0.2 (편심0.28 밀도4)"}, {"display_label": "반지름=0.22", "density_url": "runs/20260613_121115_ctrl_radius_r22/rho_density.html", "prob_url": "runs/20260613_121115_ctrl_radius_r22/face_probabilities.html", "cancelled": false, "group_id": "controlled_radius", "group_label": "변인: 반지름 (편심x좌표=0.28, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_반지름0.22 (편심0.28 밀도4 N=100000)", "png_density": "질량_반지름0.22 (편심0.28 밀도4)"}, {"display_label": "편심x좌표=0.22", "density_url": "runs/20260613_122013_ctrl_center_x22/rho_density.html", "prob_url": "runs/20260613_122013_ctrl_center_x22/face_probabilities.html", "cancelled": false, "group_id": "controlled_center", "group_label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_편심0.22 (반지름0.18 밀도4 N=100000)", "png_density": "질량_편심0.22 (반지름0.18 밀도4)"}, {"display_label": "편심x좌표=0.28", "density_url": "runs/20260613_122908_ctrl_center_x28/rho_density.html", "prob_url": "runs/20260613_122908_ctrl_center_x28/face_probabilities.html", "cancelled": false, "group_id": "controlled_center", "group_label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_편심0.28 (반지름0.18 밀도4 N=100000)", "png_density": "질량_편심0.28 (반지름0.18 밀도4)"}, {"display_label": "편심x좌표=0.32", "density_url": "runs/20260613_123804_ctrl_center_x32/rho_density.html", "prob_url": "runs/20260613_123804_ctrl_center_x32/face_probabilities.html", "cancelled": false, "group_id": "controlled_center", "group_label": "변인: 편심x좌표 (반지름=0.18, ρ=4 일정)", "study_id": "controlled", "study_label": "변인 통제 v2", "png_prob": "확률_편심0.32 (반지름0.18 밀도4 N=100000)", "png_density": "질량_편심0.32 (반지름0.18 밀도4)"}];
-    const CHART_CACHE_V = "1781339616";
+    const CHART_CACHE_V = "1781341316";
     let index = 0;
     let view = "density";
     let currentSrc = "";
@@ -540,8 +556,10 @@
       const iframe = document.getElementById("viewer");
       if (!header || !wrap || !iframe) return;
       if (window.matchMedia("(max-width: 768px)").matches) {
-        const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-        const h = Math.max(280, vh - header.offsetHeight);
+        const vv = window.visualViewport;
+        const vh = vv ? vv.height : window.innerHeight;
+        const top = vv ? vv.offsetTop : 0;
+        const h = Math.max(220, vh - header.offsetHeight - top);
         wrap.style.height = h + "px";
         wrap.style.flex = "1 1 auto";
         iframe.style.height = h + "px";
@@ -720,6 +738,7 @@
     }
     elViewer.addEventListener("load", () => {
       elLoading.classList.remove("visible");
+      scheduleResize();
       try {
         const doc = elViewer.contentDocument || elViewer.contentWindow.document;
         const plot = doc && doc.querySelector(".js-plotly-plot");

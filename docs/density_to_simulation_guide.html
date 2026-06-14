@@ -124,11 +124,12 @@
 <li><a href="#5-격자에서-질량-질량중심-관성-구하기">격자에서 질량·질량중심·관성 구하기</a></li>
 <li><a href="#6-관성텐서와-주관성-모멘트-3개">관성텐서와 주관성 모멘트 3개</a></li>
 <li><a href="#7-pybullet에-실제로-넘기는-값들">PyBullet에 실제로 넘기는 값들</a></li>
+<li><a href="#보고서용-시뮬레이션-조건-v1-v2">보고서용 — 시뮬레이션 조건 변경 이력 (v1→v2→v3)</a></li>
 <li><a href="#8-초기-랜덤-조건--수학과-코드">초기 랜덤 조건 — 수학과 코드</a></li>
 <li><a href="#9-한-시행single-trial의-시간-진행">한 시행(single trial)의 시간 진행</a></li>
 <li><a href="#10-멈춘-뒤--바닥의-면-판정">멈춘 뒤 — 바닥의 면 판정</a></li>
 <li><a href="#11-몬테카를로--확률-추정">몬테카를로 — 확률 추정</a></li>
-<li><a href="#12-drop_height와-각속도--왜-중요한가">DROP_HEIGHT와 각속도 — 왜 중요한가?</a></li>
+<li><a href="#12-drop_height와-각속도-—-왜-중요한가">낙하·충돌 파라미터 — 왜 중요한가?</a></li>
 <li><a href="#13-자주-하는-오해-정리">자주 하는 오해 정리</a></li>
 <li><a href="#14-파일별-역할-표">파일별 역할 표</a></li>
 <li><a href="#15-직접-해보기--확인-질문">직접 해보기 — 확인 질문</a></li>
@@ -155,7 +156,7 @@
 <p><strong>「이 정육면체 안에 질량이 어떻게 몰려 있는지」를 숫자로 바꿔 PyBullet에 한 번 넘기기 위한 도구</strong>입니다.</p>
 <hr>
 <h2 id="2-용어-사전">2. 용어 사전</h2>
-<table><thead><tr><th>용어</th><th>기호</th><th>쉬운 뜻</th></tr></thead><tbody><tr><td>밀도</td><td>$\rho$</td><td>단위 부피당 질량. “이 점이 얼마나 꽉 찼나”</td></tr><tr><td>질량중심</td><td>COM, $\mathbf{r}_{\mathrm{cm}}$</td><td>질량의 평균 위치. 저울 위에서 균형 잡히는 점</td></tr><tr><td>질량</td><td>$M$</td><td>전체 무게(관성 질량)</td></tr><tr><td>관성 모멘트</td><td>$I$</td><td>돌리기 어려운 정도</td></tr><tr><td>관성텐서</td><td>$\mathbf{I}$ (3×3 행렬)</td><td><strong>방향마다</strong> 돌리기 어려움이 다른 경우의 $I$</td></tr><tr><td>주관성 모멘트</td><td>$I_1, I_2, I_3$</td><td>특별한 3축(주축)에서의 $I$ — 서로 독립적으로 회전</td></tr><tr><td>쿼터니언</td><td>$q = (q_x,q_y,q_z,q_w)$</td><td>3D 회전을 4개 숫자로 저장</td></tr><tr><td>각속도</td><td>$\boldsymbol{\omega}$</td><td>회전 속도 벡터 (rad/s)</td></tr><tr><td>강체</td><td>—</td><td>모양이 안 변하는 물체</td></tr><tr><td>몬테카를로</td><td>—</td><td>같은 실험을 아주 많이 반복해 확률 추정</td></tr></tbody></table>
+<table><thead><tr><th>용어</th><th>기호</th><th>쉬운 뜻</th></tr></thead><tbody><tr><td>밀도</td><td>$\rho$</td><td>단위 부피당 질량. “이 점이 얼마나 꽉 찼나”</td></tr><tr><td>질량중심</td><td>COM, $\mathbf{r}_{\mathrm{cm}}$</td><td>질량의 평균 위치. 저울 위에서 균형 잡히는 점</td></tr><tr><td>질량</td><td>$M$</td><td>전체 질량</td></tr><tr><td>관성 모멘트</td><td>$I$</td><td>돌리기 어려운 정도</td></tr><tr><td>관성텐서</td><td>$\mathbf{I}$ (3×3 행렬)</td><td><strong>방향마다</strong> 돌리기 어려움이 다른 경우의 $I$</td></tr><tr><td>주관성 모멘트</td><td>$I_1, I_2, I_3$</td><td>특별한 3축(주축)에서의 $I$ — 서로 독립적으로 회전</td></tr><tr><td>쿼터니언</td><td>$q = (q_x,q_y,q_z,q_w)$</td><td>3D 회전을 4개 숫자로 저장</td></tr><tr><td>각속도</td><td>$\boldsymbol{\omega}$</td><td>회전 속도 벡터 (rad/s)</td></tr><tr><td>강체</td><td>—</td><td>모양이 안 변하는 물체</td></tr><tr><td>몬테카를로</td><td>—</td><td>같은 실험을 아주 많이 반복해 확률 추정</td></tr></tbody></table>
 <hr>
 <h2 id="3-밀도-함수-ρxyz란">3. 밀도 함수 ρ(x,y,z)란?</h2>
 <h3 id="31-수학적-정의">3.1 수학적 정의</h3>
@@ -321,7 +322,7 @@ die_id = p.createMultiBody(
 p.changeDynamics(
     die_id, -1,
     lateralFriction=FRICTION,          # 0.5
-    restitution=RESTITUTION,           # 0.15
+    restitution=RESTITUTION,           # 0.75 (현재)
     localInertiaDiagonal=props.principal_moments.tolist(),
 )</code></pre>
 <h3 id="71-두-겹의-좌표계">7.1 두 겹의 좌표계</h3>
@@ -340,10 +341,76 @@ p.changeDynamics(
 <p>PyBullet은 <strong>강체 역학</strong>이 잘 검증된 엔진이라,  </p>
 <p>복잡한 내부 구조를 1728개 body로 쪼개지 않고 <strong>등가 강체 1개</strong>로 처리합니다.</p>
 <hr>
+<h2 id="보고서용-시뮬레이션-조건-v1-v2">보고서용 — 시뮬레이션 조건 변경 이력 (v1 → v2 → v3)</h2>
+<blockquote>
+<p><strong>용도:</strong> 보고서·발표 자료에 그대로 인용할 수 있는 <strong>시뮬레이션 경계 조건</strong> 정리입니다.<br>
+<strong>현재 코드 기준:</strong> <strong>v3</strong> (<code>config.py</code>). v1은 프로젝트 초기 설정, v2·v3는 동역학·튕김을 단계적으로 강화한 설정입니다.</p>
+</blockquote>
+<h3 id="보고서-변경-이력">변경 이력 (changelog)</h3>
+<table>
+<thead><tr><th>버전</th><th><code>DROP_HEIGHT</code> $H$</th><th><code>RESTITUTION</code> $e$</th><th>변경 요약</th><th>기대 모션</th></tr></thead>
+<tbody>
+<tr><td><strong>v1</strong> (초기)</td><td>1.5 m</td><td>0.15</td><td>프로젝트 최초 몬테카를로</td><td>약한 충돌, 거의 안 튕김, 정적 안정에 가까움</td></tr>
+<tr><td><strong>v2</strong></td><td><strong>6.0 m</strong></td><td><strong>0.5</strong></td><td>낙하 높이·반발 동시 상향 — 「떨어뜨리기」 모델</td><td>충돌 에너지↑, 여러 번 튕김·굴림</td></tr>
+<tr><td><strong>v3</strong> (현재)</td><td>6.0 m</td><td><strong>0.75</strong></td><td>v2 유지, <strong>반발만 추가 상향</strong> — 튕김·바운스 강화</td><td>더 높이·더 오래 튕김, 시행당 시뮬 시간↑ 가능</td></tr>
+</tbody>
+</table>
+<p><strong>v1 → v2에서 바뀐 것:</strong> $H$, $e$ 둘 다.<br>
+<strong>v2 → v3에서 바뀐 것:</strong> $e$만 (0.5 → 0.75). $H$, 초기 자세·각속도, 마찰, 정지 판정 등은 동일.</p>
+<h3 id="보고서-한-줄-요약">한 줄 요약 (현재 v3)</h3>
+<p>주사위는 <strong>균일 랜덤 자세·각속도</strong>로 시작해 <strong>정지 상태에서 수직 낙하</strong>($H=6$ m)하고, 바닥과 <strong>마찰·반발</strong>($e=0.75$)을 거쳐 멈출 때까지의 <strong>강체 동역학</strong>을 PyBullet으로 계산합니다.</p>
+<h3 id="보고서-조건-비교표">조건 비교표 (v1 / v2 / v3)</h3>
+<table>
+<thead><tr><th>항목</th><th>기호·코드</th><th>v1</th><th>v2</th><th>v3 (현재)</th></tr></thead>
+<tbody>
+<tr><td>주사위 한 변</td><td><code>DIE_HALF_SIZE</code></td><td>1 m</td><td>1 m</td><td>1 m</td></tr>
+<tr><td>밀도 격자</td><td><code>GRID_N</code></td><td>12³</td><td>12³</td><td>12³</td></tr>
+<tr><td>초기 위치</td><td><code>DROP_HEIGHT</code> $H$</td><td>$z=1.5$ m</td><td>$z=6.0$ m</td><td>$z=6.0$ m</td></tr>
+<tr><td>초기 선속도</td><td>$\mathbf{v}_0$</td><td>$\mathbf{0}$</td><td>$\mathbf{0}$</td><td>$\mathbf{0}$</td></tr>
+<tr><td>초기 자세</td><td>쿼터니언</td><td>SO(3) 균일</td><td>SO(3) 균일</td><td>SO(3) 균일</td></tr>
+<tr><td>초기 각속도</td><td><code>MAX_ANGULAR_VEL</code></td><td>$\pm 2.0$ rad/s</td><td>$\pm 2.0$ rad/s</td><td>$\pm 2.0$ rad/s</td></tr>
+<tr><td>중력</td><td>$g$</td><td>9.81 m/s²</td><td>9.81 m/s²</td><td>9.81 m/s²</td></tr>
+<tr><td>바닥 마찰</td><td><code>FRICTION</code> $\mu$</td><td>0.5</td><td>0.5</td><td>0.5</td></tr>
+<tr><td>바닥·주사위 반발</td><td><code>RESTITUTION</code> $e$</td><td>0.15</td><td>0.5</td><td><strong>0.75</strong></td></tr>
+<tr><td>정지 판정</td><td><code>VEL</code> / <code>ANG_VEL</code> / <code>SETTLE_TIME</code></td><td>0.01 / 0.05 / 0.1 s</td><td>동일</td><td>동일</td></tr>
+<tr><td>시뮬 스텝·상한</td><td><code>PHYSICS_DT</code> / <code>MAX_SIM_STEPS</code></td><td>1/240 s, 10 s</td><td>동일</td><td>동일</td></tr>
+<tr><td>결과 측정</td><td><code>get_bottom_face</code></td><td>바닥 면 번호</td><td>바닥 면 번호</td><td>바닥 면 번호</td></tr>
+</tbody>
+</table>
+<h3 id="보고서-변경-이유">버전별 변경 이유 (보고서용)</h3>
+<ol>
+<li><strong>v1 → v2: $H$ 1.5 m → 6.0 m</strong> — 충돌 직전 속도 $v \approx \sqrt{2gH}$를 키워 ($5.4 \to 10.8$ m/s) 회전·충돌·재바운스의 <strong>동역학적 효과</strong>를 강화.</li>
+<li><strong>v1 → v2: $e$ 0.15 → 0.5</strong> — 바닥 충돌 후 <strong>눈에 띄는 튕김·굴림</strong> 허용. $e=0.15$는 에너지가 빨리 소실됨.</li>
+<li><strong>v2 → v3: $e$ 0.5 → 0.75</strong> — v2의 낙하 높이는 유지하고 <strong>반발만 추가 상향</strong>. 1차 반등 후 수직 속도 비율이 약 50% → 75%로 커져, <strong>더 많은 바운스</strong>와 경로 의존성을 기대. 시행당 시뮬 스텝 수·10초 상한 도달 빈도가 늘 수 있음.</li>
+<li><strong>공통 유지:</strong> SO(3) 균일 자세, 각 축 $\pm\omega_{\max}$ 랜덤 각속도 — 몬테카를로로 $p_k$ 통계 추정.</li>
+</ol>
+<h3 id="보고서-수치-비교">낙하·충돌 수치 비교</h3>
+<table>
+<thead><tr><th>량</th><th>v1 ($H=1.5$, $e=0.15$)</th><th>v2 ($H=6.0$, $e=0.5$)</th><th>v3 ($H=6.0$, $e=0.75$, 현재)</th></tr></thead>
+<tbody>
+<tr><td>충돌 직전 속도</td><td>$\approx 5.4$ m/s</td><td>$\approx 10.8$ m/s</td><td>$\approx 10.8$ m/s</td></tr>
+<tr><td>위치 에너지 $MgH$ ($M \approx 1$ kg)</td><td>$\approx 15$ J</td><td>$\approx 59$ J</td><td>$\approx 59$ J</td></tr>
+<tr><td>1차 반등 후 수직 속도 비율</td><td>$\approx 15\%$</td><td>$\approx 50\%$</td><td>$\approx 75\%$</td></tr>
+<tr><td>기대 모션</td><td>약한 충돌, 빠른 감쇠</td><td>여러 번 튕김·굴림</td><td>더 높은·더 긴 바운스</td></tr>
+</tbody>
+</table>
+<h3 id="보고서-현재-config">현재 시뮬레이션 설정 (<code>config.py</code>, v3)</h3>
+<pre><code class="language-python">DROP_HEIGHT = 6.0       # 주사위 중심 z (m)
+MAX_ANGULAR_VEL = 2.0   # 초기 각속도 최대 (rad/s)
+FRICTION = 0.5
+RESTITUTION = 0.75      # 반발계수 (v2: 0.5, v1: 0.15)
+PHYSICS_DT = 1.0 / 240.0
+MAX_SIM_STEPS = 2400      # 최대 약 10 s</code></pre>
+<p><strong>구현 파일:</strong> <code>simulation/single_trial.py</code> (1회), <code>simulation/monte_carlo.py</code> ($N$회), <code>physics/bodies.py</code> (바닥·주사위 물성).</p>
+<h3 id="보고서-모델-문장">보고서에 넣을 모델 설명 (복사용, v3)</h3>
+<blockquote>
+<p>비균일 밀도 $\rho(\mathbf{r})$로부터 격자 적분으로 질량 $M$, 질량중심, 관성텐서를 구하고, PyBullet 강체 1개로 낙하 시뮬레이션을 수행하였다. 초기 조건은 위치 $(0,0,H)$, 선속도 $\mathbf{0}$, SO(3) 균일 랜덤 자세, 각 축 $\pm\omega_{\max}$ ($\omega_{\max}=2.0\,\mathrm{rad/s}$) 균일 랜덤 각속도이다. 바닥은 마찰계수 $\mu=0.5$, 반발계수 $e=0.75$의 평면으로 모델링하였다. 낙하 높이는 $H=6.0\,\mathrm{m}$이다. 각 시행이 정지하면 바닥에 닿은 면 번호를 기록하고, $N$회 반복으로 면별 확률 $\hat{p}_k$를 추정하였다. (초기 설정 v1: $H=1.5\,\mathrm{m}$, $e=0.15$; 중간 v2: $e=0.5$.)</p>
+</blockquote>
+<hr>
 <h2 id="8-초기-랜덤-조건-—-수학과-코드">8. 초기 랜덤 조건 — 수학과 코드</h2>
 <p><code>simulation/single_trial.py</code> — 매 시행마다 <strong>다른 초기 조건</strong>.</p>
 <h3 id="81-위치">8.1 위치</h3>
-<p>$$\mathbf{x}_0 = (0,\; 0,\; H), \quad H = \texttt{DROP\_HEIGHT} = 1.5\,\mathrm{m}$$</p>
+<p>$$\mathbf{x}_0 = (0,\; 0,\; H), \quad H = \texttt{DROP\_HEIGHT} = 6\,\mathrm{m}$$</p>
 <p>수평 방향은 항상 중앙. <strong>높이만</strong> 정해져 있고, 옆으로 던지지 않습니다.</p>
 <h3 id="82-선속도">8.2 선속도</h3>
 <p>$$\mathbf{v}_0 = (0,\; 0,\; 0)$$</p>
@@ -418,22 +485,23 @@ p_k = counts[k] / N</code></pre>
 <p>$$\mathrm{SE} \approx \sqrt{\frac{(1/6)(5/6)}{100000}} \approx 0.0012 = 0.12\%$$</p>
 <p>즉 100k면 <strong>0.2%p 정도</strong> 차이는 통계적으로 의미 있을 수 있습니다.</p>
 <hr>
-<h2 id="12-drop_height와-각속도-—-왜-중요한가">12. DROP_HEIGHT와 각속도 — 왜 중요한가?</h2>
-<p><code>config.py</code>:</p>
-<pre><code class="language-python">DROP_HEIGHT = 1.5       # m
+<h2 id="12-drop_height와-각속도-—-왜-중요한가">12. 낙하·충돌 파라미터 — 왜 중요한가?</h2>
+<p><code>config.py</code> (v3 현재, <a href="#보고서용-시뮬레이션-조건-v1-v2">§변경 이력</a> 참고):</p>
+<pre><code class="language-python">DROP_HEIGHT = 6.0       # m  (v1: 1.5)
 MAX_ANGULAR_VEL = 2.0   # rad/s
-RESTITUTION = 0.15
+RESTITUTION = 0.75      # v2: 0.5, v1: 0.15
 FRICTION = 0.5</code></pre>
 <h3 id="121-drop_height-h">12.1 DROP_HEIGHT $H$</h3>
 <p>낙하 속도 (끝에서, 공기저항 무시):</p>
-<p>$$v \approx \sqrt{2gH} \approx \sqrt{2 \times 9.81 \times 1.5} \approx 5.4\,\mathrm{m/s}$$</p>
-<table><thead><tr><th>$H$</th><th>효과</th></tr></thead><tbody><tr><td><strong>크다</strong> (1.5 m)</td><td>충돌 에너지↑, 여러 번 튕김, <strong>동역학</strong>이 지배</td></tr><tr><td><strong>작다</strong> (예: 0.55 m)</td><td>$v \approx 3.3$ m/s, 충돌 약함 → <strong>정적 안정</strong>에 가까워질 수 있음</td></tr></tbody></table>
-<p><strong>실험 제안:</strong> $H$와 $\omega_{\max}$를 바꿔 보면  </p>
-<p>「무거운 쪽 면이 바닥」(정적) vs 「5번 편향」(동적)을 <strong>분리</strong>해 볼 수 있습니다.</p>
+<p>$$v \approx \sqrt{2gH} \approx \sqrt{2 \times 9.81 \times 6} \approx 10.8\,\mathrm{m/s}$$</p>
+<table><thead><tr><th>$H$</th><th>대략 $v$</th><th>버전</th><th>효과</th></tr></thead><tbody><tr><td>1.5 m</td><td>$\approx 5.4$ m/s</td><td>v1</td><td>충돌 약함 → 정적 안정에 가까워질 수 있음</td></tr><tr><td><strong>6 m</strong></td><td>$\approx 10.8$ m/s</td><td>v2·v3 (현재)</td><td>충돌 에너지↑, 여러 번 튕김·굴림, <strong>동역학</strong> 지배</td></tr><tr><td>0.55 m (참고)</td><td>$\approx 3.3$ m/s</td><td>—</td><td>매우 약한 낙하</td></tr></tbody></table>
 <h3 id="122-max_angular_vel">12.2 MAX_ANGULAR_VEL</h3>
-<table><thead><tr><th>값</th><th>효과</th></tr></thead><tbody><tr><td><strong>0</strong></td><td>스핀 없이 떨어짐 → COM·위치에너지 효과가 더 직접적</td></tr><tr><td><strong>2 rad/s</strong></td><td>꽤 빠른 회전 → 충돌 후 최종 면이 <strong>경로 의존적</strong></td></tr></tbody></table>
-<h3 id="123-restitution-e-015">12.3 RESTITUTION $e = 0.15$</h3>
-<p>충돌 후 속도 반전 비율. <strong>낮을수록</strong> 덜 튕기고 빨리 에너지 소실.</p>
+<table><thead><tr><th>값</th><th>효과</th></tr></thead><tbody><tr><td><strong>0</strong></td><td>스핀 없이 떨어짐 → COM·위치에너지 효과가 더 직접적</td></tr><tr><td><strong>2 rad/s</strong> (v1·v2·v3 공통)</td><td>꽤 빠른 회전 → 충돌 후 최종 면이 <strong>경로 의존적</strong></td></tr></tbody></table>
+<h3 id="123-restitution-e">12.3 RESTITUTION $e$</h3>
+<p>충돌 후 법선 방향 속도 반전 비율.</p>
+<table><thead><tr><th>버전</th><th>$e$</th><th>튕김</th></tr></thead><tbody><tr><td>v1</td><td>0.15</td><td>거의 안 튕김, 빠른 감쇠</td></tr><tr><td>v2</td><td>0.5</td><td>중간 튕김, 여러 번 바운스</td></tr><tr><td><strong>v3 (현재)</strong></td><td><strong>0.75</strong></td><td>강한 튕김, 더 높은·더 긴 바운스</td></tr></tbody></table>
+<p><strong>실험 제안:</strong> $H$, $e$, $\omega_{\max}$를 바꿔 보면  </p>
+<p>「무거운 쪽 면이 바닥」(정적) vs 「5번 편향」(동적)을 <strong>분리</strong>해 볼 수 있습니다.</p>
 <h3 id="124-정적-vs-동적-—-숫자-예-ctrl_factor_f50">12.4 정적 vs 동적 — 숫자 예 (ctrl_factor_f50)</h3>
 <p><strong>정적</strong> (COM 높이만 비교):</p>
 <table><thead><tr><th>바닥 면</th><th>COM 높이</th></tr></thead><tbody><tr><td>2번 (+x 아래)</td><td><strong>0.469 m</strong> (최소 → 가장 안정)</td></tr><tr><td>5번 (−x 아래)</td><td><strong>0.531 m</strong> (최대)</td></tr></tbody></table>
@@ -501,7 +569,7 @@ FRICTION = 0.5</code></pre>
 <li><code>docs/</code> 외 프로젝트 <code>README.md</code> — 실행 방법</li>
 </ul>
 <hr>
-<p>*이 문서는 프로젝트 코드(<code>GRID_N=12</code>, <code>DROP_HEIGHT=1.5</code>, 바닥 면 판정) 기준으로 작성되었습니다. 파라미터를 바꾸면 수치 예시도 함께 바뀝니다.*</p>
+<p>*이 문서는 프로젝트 코드(<code>GRID_N=12</code>, <code>DROP_HEIGHT=6</code>, <code>RESTITUTION=0.75</code>, 바닥 면 판정) <strong>v3</strong> 기준입니다. v1→v2→v3 변경 이력은 <a href="#보고서용-시뮬레이션-조건-v1-v2">§시뮬레이션 조건 변경 이력</a>을 참고하세요.*</p>
   </article>
 </body>
 </html>

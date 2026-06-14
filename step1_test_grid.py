@@ -7,7 +7,7 @@ grid = get_preset_rho("uniform")
 print("=== 1단계 결과 ===")
 print(grid)
 print(f"밀도 범위: {grid.rho.min()} ~ {grid.rho.max()}")
-print(f"무게중심 (0,0,0에 가까워야 함): {grid.center_of_mass}")
+print(f"질량중심 (0,0,0에 가까워야 함): {grid.center_of_mass}")
 
 plot_rho_grid(grid, title="균일 밀도 (검증용)", show=False)
 print("3D 그래프 저장됨: output/rho_density.html")

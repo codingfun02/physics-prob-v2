@@ -57,6 +57,16 @@ def compute_inertia(grid: RhoGrid) -> InertiaProperties:
     principal_moments = eigvals[order]
     principal_axes = eigvecs[:, order]
 
+    # I₁≈I₂≈I₃ (균일·구 대칭): 주축이 유일하지 않음 → body x,y,z 고정
+    i_mean = float(np.mean(principal_moments))
+    if i_mean > 0:
+        rel_spread = float(
+            (principal_moments.max() - principal_moments.min()) / i_mean
+        )
+        if rel_spread < 1e-8:
+            principal_axes = np.eye(3)
+            principal_moments = np.diag(I)
+
     # det=-1 이면 반사 행렬 → 한 축 뒤집어서 올바른 회전행렬로
     if np.linalg.det(principal_axes) < 0:
         principal_axes[:, 0] *= -1

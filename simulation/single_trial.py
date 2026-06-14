@@ -33,32 +33,25 @@ def _random_angular_velocity() -> list[float]:
     return w.tolist()
 
 
-def run_single_trial(
-    grid: RhoGrid,
-    props: InertiaProperties | None = None,
-    seed: int | None = None,
-) -> int:
-    """
-    주사위 1회 던지기 → 바닥의 면 번호(1~6) 반환.
-
-    과정: 높이 DROP_HEIGHT에서 랜덤 자세·각속도로 시작 → 낙하 → 바닥 충돌 → 정지.
-    """
+def trial_initial_conditions(seed: int | None = None) -> tuple[list[float], list[float]]:
+    """랜덤 자세·각속도 (쿼터니언, rad/s)."""
     if seed is not None:
         np.random.seed(seed)
+    return _random_orientation(), _random_angular_velocity()
 
-    if props is None:
-        props = compute_inertia(grid)
 
-    p.connect(p.DIRECT)
-    p.setTimeStep(PHYSICS_DT)
-    create_world()
-    die_id = create_die(grid, props)
-
-    orn = _random_orientation()
-    ang_vel = _random_angular_velocity()
+def reset_die_for_trial(
+    die_id: int,
+    orn: list[float],
+    ang_vel: list[float],
+) -> None:
+    """DROP_HEIGHT에서 선속도 0, 주어진 자세·각속도로 리셋."""
     p.resetBasePositionAndOrientation(die_id, [0, 0, DROP_HEIGHT], orn)
     p.resetBaseVelocity(die_id, [0, 0, 0], ang_vel)
 
+
+def step_until_settled(die_id: int) -> int:
+    """시뮬 스텝 반복 후 바닥의 면 번호(1~6) 반환."""
     settle_steps = int(SETTLE_TIME / PHYSICS_DT)
     still_count = 0
 
@@ -76,6 +69,29 @@ def run_single_trial(
             still_count = 0
 
     _, final_orn = p.getBasePositionAndOrientation(die_id)
-    bottom_face = get_bottom_face(final_orn)
+    return get_bottom_face(final_orn)
+
+
+def run_single_trial(
+    grid: RhoGrid,
+    props: InertiaProperties | None = None,
+    seed: int | None = None,
+) -> int:
+    """
+    주사위 1회 던지기 → 바닥의 면 번호(1~6) 반환.
+
+    과정: 높이 DROP_HEIGHT에서 랜덤 자세·각속도로 시작 → 낙하 → 바닥 충돌 → 정지.
+    """
+    if props is None:
+        props = compute_inertia(grid)
+
+    p.connect(p.DIRECT)
+    p.setTimeStep(PHYSICS_DT)
+    create_world()
+    die_id = create_die(grid, props)
+
+    orn, ang_vel = trial_initial_conditions(seed)
+    reset_die_for_trial(die_id, orn, ang_vel)
+    bottom_face = step_until_settled(die_id)
     p.disconnect()
     return bottom_face

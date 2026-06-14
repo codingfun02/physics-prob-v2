@@ -7,12 +7,12 @@ DIE_HALF_SIZE = 0.5  # 반쪽 길이 → 전체 [-0.5, 0.5]
 GRID_N = 12
 
 # 낙하 조건
-DROP_HEIGHT = 1.5       # 주사위 중심이 바닥 위 몇 m에서 시작할지
+DROP_HEIGHT = 6.0       # 주사위 중심이 바닥 위 몇 m에서 시작할지
 MAX_ANGULAR_VEL = 2.0   # 초기 각속도 최대값 (rad/s) — 낮을수록 관성·질량중심 효과↑
 
 # 바닥 물성
 FRICTION = 0.5
-RESTITUTION = 0.15  # 반발계수 — 낮을수록 튕김·혼란↓
+RESTITUTION = 0.75  # 반발계수 — 0=안 튕김, 1=완전 탄성
 
 # 정지 판정
 VEL_THRESHOLD = 0.01       # m/s

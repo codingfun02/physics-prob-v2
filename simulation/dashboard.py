@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import shutil
 import time
 from pathlib import Path
 
@@ -33,6 +34,8 @@ from simulation.output_layout import (
     STUDY_SPHERE_LEGACY,
     STUDY_VARIABLE_GROUPS,
     VARIABLE_GROUP_ORDER,
+    comparison_html_path,
+    comparison_path,
     density_preview_path,
     resolve_density_previews_dir,
     study_for_preset,
@@ -464,6 +467,58 @@ def refresh_density_htmls(
     return n
 
 
+def _build_study_comparison_charts(
+    output_dir: Path,
+    flat: list[dict],
+    runs: list[dict],
+) -> dict[str, str]:
+    """실험 묶음별 비교 차트 HTML 생성 → {study_id: 상대 URL}."""
+    study_axes = prob_y_axes_by_study(output_dir)
+    compare_urls: dict[str, str] = {}
+
+    for study_id in DASHBOARD_STUDY_IDS:
+        study_run_ids = {
+            it["run_id"]
+            for it in flat
+            if it.get("kind") == "simulation"
+            and it.get("study_id") == study_id
+            and it.get("run_id")
+        }
+        if len(study_run_ids) < 2:
+            continue
+        comparison_runs = [r for r in runs if r["run_id"] in study_run_ids]
+        if len(comparison_runs) < 2:
+            continue
+
+        preset_order = {
+            name: i for i, name in enumerate(STUDY_PRESETS.get(study_id, []))
+        }
+        comparison_runs.sort(
+            key=lambda r: preset_order.get(r["rho_name"], 999)
+        )
+
+        comp_path = comparison_html_path(study_id, output_dir)
+        label = STUDY_LABELS.get(study_id, study_id)
+        comp_y = study_axes.get(study_id)
+        plot_runs_comparison(
+            comparison_runs,
+            comp_path,
+            title=(
+                "바닥의 눈 확률 분포 비교",
+                f"{label} — {len(comparison_runs)}개 시뮬레이션",
+            ),
+            y_range=comp_y[0] if comp_y else None,
+            y_dtick=comp_y[1] if comp_y else None,
+        )
+        compare_urls[study_id] = comp_path.relative_to(output_dir).as_posix()
+
+    if STUDY_CONTROLLED in compare_urls:
+        legacy = comparison_path(output_dir)
+        shutil.copy2(output_dir / compare_urls[STUDY_CONTROLLED], legacy)
+
+    return compare_urls
+
+
 def build_dashboard(output_dir: str | Path = OUTPUT_DIR) -> Path:
     """통합 대시보드 HTML 생성. 경로: output/index.html"""
     from simulation.output_layout import dashboard_path as index_path
@@ -490,24 +545,8 @@ def build_dashboard(output_dir: str | Path = OUTPUT_DIR) -> Path:
     n_density = sum(1 for it in flat if it.get("density_url"))
     n_sim = sum(1 for it in flat if it.get("prob_url"))
 
-    if flat:
-        dashboard_run_ids = {
-            it["run_id"] for it in flat if it.get("kind") == "simulation" and it.get("run_id")
-        }
-        comparison_runs = [r for r in runs if r["run_id"] in dashboard_run_ids]
-        if comparison_runs:
-            study_axes = prob_y_axes_by_study(output_dir)
-            comp_y = study_axes.get(STUDY_CONTROLLED)
-            plot_runs_comparison(
-                comparison_runs,
-                output_dir / "comparison.html",
-                title=(
-                    "바닥의 눈 확률 분포 비교",
-                    f"변인 통제 v2 — {len(comparison_runs)}개 시뮬레이션",
-                ),
-                y_range=comp_y[0] if comp_y else None,
-                y_dtick=comp_y[1] if comp_y else None,
-            )
+    compare_urls = _build_study_comparison_charts(output_dir, flat, runs)
+    compare_urls_json = json.dumps(compare_urls, ensure_ascii=False)
 
     html = f"""<!DOCTYPE html>
 <html lang="ko">
@@ -885,7 +924,7 @@ def build_dashboard(output_dir: str | Path = OUTPUT_DIR) -> Path:
         <button type="button" class="active" data-view="density">질량분포</button>
         <button type="button" data-view="compare">분포 비교</button>
       </div>
-      <button type="button" class="export-btn" id="btn-export-group" title="변인 통제 v2 전체 질량·확률 PNG를 ZIP으로 저장">묶음 PNG</button>
+      <button type="button" class="export-btn" id="btn-export-group" title="현재 실험 묶음의 질량·확률 PNG를 ZIP으로 저장">묶음 PNG</button>
       <button type="button" class="panel-toggle" id="toggle-sidebar" title="목록">☰ 목록</button>
     </div>
   </header>
@@ -906,7 +945,7 @@ def build_dashboard(output_dir: str | Path = OUTPUT_DIR) -> Path:
     let index = 0;
     let view = "density";
     let currentSrc = "";
-    const COMPARE_URL = "comparison.html";
+    const COMPARE_URLS = {compare_urls_json};
 
     function chartUrl(url) {{
       if (!url) return "";
@@ -986,8 +1025,22 @@ def build_dashboard(output_dir: str | Path = OUTPUT_DIR) -> Path:
     }}
 
     function studyFolderBase(label) {{
-      if (!label) return "변인 통제 V2";
-      return String(label).replace(/v2$/i, "V2");
+      if (!label) return "simulation";
+      return safeExportName(label);
+    }}
+
+    function compareUrlForStudy(studyId) {{
+      if (!studyId) return null;
+      return COMPARE_URLS[studyId] || null;
+    }}
+
+    function compareUrlForCurrentStudy() {{
+      const it = ITEMS[index];
+      return it && it.study_id ? compareUrlForStudy(it.study_id) : null;
+    }}
+
+    function currentStudyHasCompare() {{
+      return !!compareUrlForCurrentStudy();
     }}
 
     function studyExportFolderName(label) {{
@@ -1169,7 +1222,7 @@ def build_dashboard(output_dir: str | Path = OUTPUT_DIR) -> Path:
     }}
 
     function currentUrl() {{
-      if (view === "compare") return COMPARE_URL;
+      if (view === "compare") return compareUrlForCurrentStudy() || "";
       const it = ITEMS[index];
       if (view === "density") return it.density_url || "";
       return it.prob_url || "";
@@ -1182,10 +1235,11 @@ def build_dashboard(output_dir: str | Path = OUTPUT_DIR) -> Path:
         elLoading.classList.remove("visible");
         return;
       }}
-      if (url === currentSrc) return;
-      currentSrc = url;
+      const busted = chartUrl(url);
+      if (busted === currentSrc) return;
+      currentSrc = busted;
       elLoading.classList.add("visible");
-      elViewer.src = chartUrl(url);
+      elViewer.src = busted;
     }}
 
     function itemHasViewUrl(i) {{
@@ -1226,6 +1280,9 @@ def build_dashboard(output_dir: str | Path = OUTPUT_DIR) -> Path:
         const sid = it.study_id;
         btnExportGroup.disabled = isCompare || !sid
           || collectStudyPngEntries(sid).length === 0;
+        if (it.study_label) {{
+          btnExportGroup.title = it.study_label + " 전체 질량·확률 PNG를 ZIP으로 저장";
+        }}
       }}
       setViewerUrl(currentUrl());
       scheduleResize();
@@ -1234,11 +1291,12 @@ def build_dashboard(output_dir: str | Path = OUTPUT_DIR) -> Path:
       }});
 
       if (isCompare) {{
-        elNavCurrent.textContent = "분포 비교";
+        const cmpLabel = it.study_label ? ("분포 비교 — " + it.study_label) : "분포 비교";
+        elNavCurrent.textContent = cmpLabel;
         updateNavButtons();
         document.querySelectorAll(".view-tabs button").forEach(btn => {{
           btn.classList.toggle("active", btn.dataset.view === view);
-          btn.disabled = btn.dataset.view === "compare" && {n_sim} === 0;
+          btn.disabled = btn.dataset.view === "compare" && !currentStudyHasCompare();
         }});
         return;
       }}
@@ -1251,13 +1309,14 @@ def build_dashboard(output_dir: str | Path = OUTPUT_DIR) -> Path:
         btn.classList.toggle("active", v === view);
         if (v === "prob") btn.disabled = !it.prob_url;
         if (v === "density") btn.disabled = !it.density_url;
-        if (v === "compare") btn.disabled = {n_sim} === 0;
+        if (v === "compare") btn.disabled = !currentStudyHasCompare();
       }});
     }}
 
     function selectItem(i) {{
       index = Math.max(0, Math.min(ITEMS.length - 1, i));
       if (view === "prob" && !ITEMS[index].prob_url) view = "density";
+      if (view === "compare" && !compareUrlForCurrentStudy()) view = "density";
       updateView();
     }}
 

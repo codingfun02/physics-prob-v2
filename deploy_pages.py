@@ -43,6 +43,10 @@ def build_site(output_dir: Path, site_dir: Path) -> int:
             if name.endswith(".html"):
                 n += 1
 
+    for comp in sorted(output_dir.glob("comparison_*.html")):
+        shutil.copy2(comp, site_dir / comp.name)
+        n += 1
+
     n += _copy_html_tree(output_dir / "runs", site_dir / "runs")
     n += _copy_html_tree(output_dir / "studies", site_dir / "studies")
 

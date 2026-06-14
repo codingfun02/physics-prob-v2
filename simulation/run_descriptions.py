@@ -103,7 +103,7 @@ def _sphere_spec_lines(spec: dict) -> list[str]:
     ]
 
 
-def _controlled_spec_lines(spec: dict) -> list[str]:
+def _controlled_spec_lines(spec: dict, study_id: str | None = None) -> list[str]:
     lines = _sphere_spec_lines(spec)
     g = spec["group"]
     x0, r, f = spec["x0"], spec["radius"], spec["factor"]
@@ -123,7 +123,11 @@ def _controlled_spec_lines(spec: dict) -> list[str]:
             f"변인 통제 C(중심): {_fmt_radius(r)}, 구 안 {rho} 고정, "
             f"{_fmt_x0(x0)} 만 변경"
         )
-    lines.append("실험 묶음: 변인 통제 v2 (GRID_N=12, MAX_ANGULAR_VEL=2, RESTITUTION=0.15)")
+    slabel = study_label_ko(study_id) or "변인 통제 v2"
+    lines.append(
+        f"실험 묶음: {slabel} (GRID_N={GRID_N}, H={DROP_HEIGHT}m, "
+        f"MAX_ANGULAR_VEL={MAX_ANGULAR_VEL}, RESTITUTION={RESTITUTION})"
+    )
     return lines
 
 
@@ -396,14 +400,14 @@ def probability_plot_title(
     )
 
 
-def preset_density_lines(rho_name: str) -> list[str]:
+def preset_density_lines(rho_name: str, study_id: str | None = None) -> list[str]:
     """프리셋 이름만으로 밀도 조건 설명."""
     if rho_name == "uniform":
         return _uniform_lines()
 
     spec = lookup_controlled_spec(rho_name)
     if spec:
-        return _controlled_spec_lines(spec)
+        return _controlled_spec_lines(spec, study_id)
 
     for spec in SPHERE_STUDY_SPECS:
         if spec["name"] == rho_name:
@@ -444,8 +448,9 @@ def build_conditions(item: dict) -> dict[str, Any]:
     item: flatten_group_items()의 원소 (simulation 또는 preview)
     """
     rho_name = item.get("rho_name") or item.get("label", "?")
+    sid = item.get("study_id")
     sections: list[dict[str, Any]] = [
-        {"title": "밀도 조건", "lines": preset_density_lines(rho_name)},
+        {"title": "밀도 조건", "lines": preset_density_lines(rho_name, sid)},
         {"title": "공통 물리·시뮬 설정", "lines": global_physics_lines()},
     ]
 

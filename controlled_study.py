@@ -16,16 +16,39 @@ from density.visualize import plot_rho_grid
 from simulation.run_descriptions import density_plot_title
 from simulation.batch import allocate_workers, build_jobs, run_batch
 from simulation.cancel import install_cancel_handler, is_cancel_requested, reset_cancel
-from simulation.output_layout import STUDY_CONTROLLED, density_previews_dir
+from simulation.output_layout import (
+    STUDY_CONTROLLED,
+    STUDY_CONTROLLED_V3,
+    STUDY_LABELS,
+    density_previews_dir,
+)
+
+STUDY_BY_KEY: dict[str, str] = {
+    "v2": STUDY_CONTROLLED,
+    "controlled": STUDY_CONTROLLED,
+    "v3": STUDY_CONTROLLED_V3,
+    "controlled_v3": STUDY_CONTROLLED_V3,
+}
 
 
-def _preview_dir(output_dir: str | Path = "output") -> Path:
-    return density_previews_dir(STUDY_CONTROLLED, output_dir)
+def _resolve_study_id(study_key: str) -> str:
+    if study_key in STUDY_BY_KEY:
+        return STUDY_BY_KEY[study_key]
+    if study_key in STUDY_LABELS:
+        return study_key
+    raise ValueError(f"Unknown study {study_key!r}. Choose from {list(STUDY_BY_KEY)}")
 
 
-def visualize_all_density(output_dir: Path | str | None = None) -> list[Path]:
+def _preview_dir(study_id: str, output_dir: str | Path = "output") -> Path:
+    return density_previews_dir(study_id, output_dir)
+
+
+def visualize_all_density(
+    output_dir: Path | str | None = None,
+    study_id: str = STUDY_CONTROLLED,
+) -> list[Path]:
     """10가지 밀도 분포 HTML (균일 + 변인 통제 9종)."""
-    output_dir = _preview_dir(output_dir or "output")
+    output_dir = _preview_dir(study_id, output_dir or "output")
     output_dir.mkdir(parents=True, exist_ok=True)
     paths: list[Path] = []
     n_total = len(CONTROLLED_STUDY_SIM_NAMES)
@@ -50,9 +73,10 @@ def visualize_all_density(output_dir: Path | str | None = None) -> list[Path]:
 
 
 def run_sequential_simulations(
-    n_trials: int = 50000,
+    n_trials: int = 100_000,
     checkpoint_interval: int = 5000,
     output_dir: str = "output",
+    study_id: str = STUDY_CONTROLLED,
 ) -> list[dict]:
     """균일 + 변인 통제 9종 순차 실행."""
     install_cancel_handler()
@@ -64,7 +88,7 @@ def run_sequential_simulations(
     )
 
     print_controlled_study_plan()
-    print("=== 순차 시뮬레이션 ===")
+    print(f"=== 순차 시뮬레이션 — {STUDY_LABELS.get(study_id, study_id)} ===")
     print(f"  시뮬 개수:    {len(CONTROLLED_STUDY_SIM_NAMES)} (균일 1 + 구 9)")
     print(f"  시행/시뮬:    {n_trials}")
     print(f"  시뮬당 워커:  {workers_per_sim}개")
@@ -84,7 +108,7 @@ def run_sequential_simulations(
         workers_per_sim=workers_per_sim,
         output_dir=output_dir,
         checkpoint_interval=checkpoint_interval,
-        study_id=STUDY_CONTROLLED,
+        study_id=study_id,
     )
     return run_batch(jobs, parallel_jobs=parallel_jobs)
 
@@ -94,24 +118,34 @@ def main():
     parser.add_argument("--visualize", action="store_true", help="밀도 HTML 생성")
     parser.add_argument("--run", action="store_true", help="순차 시뮬 실행")
     parser.add_argument("--plan", action="store_true", help="실험 설계만 출력")
-    parser.add_argument("--trials", type=int, default=50000)
+    parser.add_argument(
+        "--study",
+        default="v2",
+        choices=sorted(STUDY_BY_KEY),
+        help="실험 묶음 (v2=변인 통제 v2, v3=변인 통제 v3-높이/반발 변경)",
+    )
+    parser.add_argument("--trials", type=int, default=100_000)
     parser.add_argument("--checkpoint-interval", type=int, default=5000)
     args = parser.parse_args()
 
+    study_id = _resolve_study_id(args.study)
+
     if args.plan:
         print_controlled_study_plan()
+        print(f"실험 묶음: {STUDY_LABELS.get(study_id, study_id)}")
         return
 
     if not args.visualize and not args.run:
         args.visualize = True
 
     if args.visualize:
-        visualize_all_density()
+        visualize_all_density(study_id=study_id)
 
     if args.run:
         results = run_sequential_simulations(
             n_trials=args.trials,
             checkpoint_interval=args.checkpoint_interval,
+            study_id=study_id,
         )
         from simulation.dashboard import build_dashboard
 

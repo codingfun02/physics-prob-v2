@@ -19,17 +19,20 @@ from density.analytic import (
 # 실험 묶음 ID
 STUDY_SPHERE_LEGACY = "sphere_legacy"
 STUDY_CONTROLLED = "controlled"
+STUDY_CONTROLLED_V3 = "controlled_v3"
 STUDY_RHO_SCAN = "rho_scan"
 
 STUDY_PRESETS: dict[str, list[str]] = {
     STUDY_RHO_SCAN: list(RHO_SCAN_SIM_NAMES),
     STUDY_CONTROLLED: list(CONTROLLED_STUDY_SIM_NAMES),
+    STUDY_CONTROLLED_V3: list(CONTROLLED_STUDY_SIM_NAMES),
     STUDY_SPHERE_LEGACY: list(SPHERE_STUDY_SIM_NAMES),
 }
 
 STUDY_LABELS: dict[str, str] = {
     STUDY_RHO_SCAN: "1단계 — ρ 스캔",
     STUDY_CONTROLLED: "변인 통제 v2",
+    STUDY_CONTROLLED_V3: "변인 통제 v3-높이/반발 변경",
     STUDY_SPHERE_LEGACY: "구 밀도 실험",
 }
 
@@ -50,17 +53,19 @@ RHO_SCAN_GROUP_PRESETS: dict[str, list[str]] = {
 STUDY_VARIABLE_GROUPS: dict[str, dict[str, list[str]]] = {
     STUDY_RHO_SCAN: RHO_SCAN_GROUP_PRESETS,
     STUDY_CONTROLLED: CONTROLLED_GROUP_PRESETS,
+    STUDY_CONTROLLED_V3: CONTROLLED_GROUP_PRESETS,
     STUDY_SPHERE_LEGACY: {"legacy": list(SPHERE_STUDY_SIM_NAMES)},
 }
 
 # 대시보드·PNG export·refresh 대상 (ρ 스캔·구 밀도 실험 제외)
 ARCHIVED_STUDY_IDS: frozenset[str] = frozenset({STUDY_RHO_SCAN, STUDY_SPHERE_LEGACY})
-DASHBOARD_STUDY_IDS: list[str] = [STUDY_CONTROLLED]
+DASHBOARD_STUDY_IDS: list[str] = [STUDY_CONTROLLED, STUDY_CONTROLLED_V3]
 
 # 이전 경로 (마이그레이션용)
 _LEGACY_STUDY_DIRS = {
     STUDY_SPHERE_LEGACY: "sphere_study",
     STUDY_CONTROLLED: "controlled_study",
+    STUDY_CONTROLLED_V3: "controlled_study_v3",
 }
 
 
@@ -219,7 +224,12 @@ def dashboard_path(output_dir: str | Path = OUTPUT_DIR) -> Path:
 
 
 def comparison_path(output_dir: str | Path = OUTPUT_DIR) -> Path:
+    """레거시 — 변인 통제 v2 비교 차트 (comparison_controlled.html 과 동일 내용)."""
     return output_root(output_dir) / "comparison.html"
+
+
+def comparison_html_path(study_id: str, output_dir: str | Path = OUTPUT_DIR) -> Path:
+    return output_root(output_dir) / f"comparison_{study_id}.html"
 
 
 def history_path(output_dir: str | Path = OUTPUT_DIR) -> Path:
@@ -354,6 +364,7 @@ def reorganize_output(output_dir: str | Path = OUTPUT_DIR, *, verbose: bool = Tr
     simulated: dict[str, set[str]] = {
         STUDY_SPHERE_LEGACY: set(),
         STUDY_CONTROLLED: set(),
+        STUDY_CONTROLLED_V3: set(),
         STUDY_RHO_SCAN: set(),
     }
 

@@ -194,20 +194,34 @@ def study_from_results(data: dict) -> str:
     return inferred or "misc"
 
 
-def prob_y_axes_by_study(
-    output_dir: str | Path = OUTPUT_DIR,
-) -> dict[str, tuple[list[float], float]]:
-    """output/runs 기준 실험(study)별 통일 y축."""
+from simulation.output_layout import OUTPUT_DIR as _OUTPUT_DIR
+
+
+def _iter_results_json(output_dir: str | Path = _OUTPUT_DIR):
+    """output/runs 및 studies/**/runs 아래 results.json 경로."""
     output_dir = Path(output_dir)
-    studies: dict[str, list[tuple[list[float], list[float]]]] = defaultdict(list)
     runs_root = output_dir / "runs"
     if runs_root.is_dir():
         for results_path in sorted(runs_root.glob("*/results.json")):
-            data = json.loads(results_path.read_text(encoding="utf-8"))
-            probs = {int(k): float(v) for k, v in data["probabilities"].items()}
-            n_trials = int(data["n_trials"])
-            sid = study_from_results(data)
-            studies[sid].append(prob_series(probs, n_trials))
+            yield results_path
+    studies_root = output_dir / "studies"
+    if studies_root.is_dir():
+        for results_path in sorted(studies_root.rglob("results.json")):
+            yield results_path
+
+
+def prob_y_axes_by_study(
+    output_dir: str | Path = OUTPUT_DIR,
+) -> dict[str, tuple[list[float], float]]:
+    """실험(study)별 통일 y축."""
+    output_dir = Path(output_dir)
+    studies: dict[str, list[tuple[list[float], list[float]]]] = defaultdict(list)
+    for results_path in _iter_results_json(output_dir):
+        data = json.loads(results_path.read_text(encoding="utf-8"))
+        probs = {int(k): float(v) for k, v in data["probabilities"].items()}
+        n_trials = int(data["n_trials"])
+        sid = study_from_results(data)
+        studies[sid].append(prob_series(probs, n_trials))
     return {sid: unify_prob_y_axis(series) for sid, series in studies.items()}
 
 
@@ -220,14 +234,12 @@ def prob_y_axis_for_study(
     """한 실험(study) y축 (디스크 run + extra 시리즈 포함)."""
     output_dir = Path(output_dir)
     series_list: list[tuple[list[float], list[float]]] = []
-    runs_root = output_dir / "runs"
-    if runs_root.is_dir():
-        for results_path in sorted(runs_root.glob("*/results.json")):
-            data = json.loads(results_path.read_text(encoding="utf-8"))
-            if study_from_results(data) != study_id:
-                continue
-            probs = {int(k): float(v) for k, v in data["probabilities"].items()}
-            series_list.append(prob_series(probs, int(data["n_trials"])))
+    for results_path in _iter_results_json(output_dir):
+        data = json.loads(results_path.read_text(encoding="utf-8"))
+        if study_from_results(data) != study_id:
+            continue
+        probs = {int(k): float(v) for k, v in data["probabilities"].items()}
+        series_list.append(prob_series(probs, int(data["n_trials"])))
     if extra:
         for probs, n_trials in extra:
             series_list.append(prob_series(probs, n_trials))

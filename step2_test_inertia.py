@@ -10,6 +10,6 @@ props = compute_inertia(grid)
 
 print("=== 2단계 결과 ===")
 print(f"총 질량 M = {props.mass:.4f} kg  (rho=1, 부피=1m³ 이면 1kg)")
-print(f"무게중심   = {props.com}")
+print(f"질량중심   = {props.com}")
 print(f"관성텐서 대각 = {np.diag(props.inertia_tensor)}")
 print(f"이론값 M/12  = {props.mass / 12:.6f}  (균일 정육면체)")

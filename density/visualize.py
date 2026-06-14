@@ -594,7 +594,7 @@ def _com_offset_trace(com: np.ndarray) -> list[go.Scatter3d]:
 
 
 def _principal_axis_traces(props: InertiaProperties, half: float) -> list[go.Scatter3d]:
-    """질량중심에서 주관성 축 방향 선."""
+    """질량중심을 지나는 주관성 축 3개 (길이 ∝ √I_k)."""
     axes = props.principal_rotation.as_matrix()
     com = props.com
     i_max = float(props.principal_moments.max())
@@ -606,19 +606,45 @@ def _principal_axis_traces(props: InertiaProperties, half: float) -> list[go.Sca
     traces: list[go.Scatter3d] = []
     for i in range(3):
         direction = axes[:, i]
-        length = half * 0.35 * float(np.sqrt(props.principal_moments[i] / i_max))
-        end = com + direction * length
+        length = half * 0.42 * float(np.sqrt(props.principal_moments[i] / i_max))
+        pos_end = com + direction * length
+        neg_end = com - direction * length
+        color = colors[i]
+        label = labels[i]
+        ik = float(props.principal_moments[i])
         traces.append(
             go.Scatter3d(
-                x=[float(com[0]), float(end[0])],
-                y=[float(com[1]), float(end[1])],
-                z=[float(com[2]), float(end[2])],
+                x=[float(neg_end[0]), float(pos_end[0])],
+                y=[float(neg_end[1]), float(pos_end[1])],
+                z=[float(neg_end[2]), float(pos_end[2])],
                 mode="lines",
-                line=dict(color=colors[i], width=5),
-                name=labels[i],
+                line=dict(color=color, width=6),
+                name=label,
+                legendgroup=label,
+                showlegend=True,
                 hovertemplate=(
-                    f"{labels[i]} = {props.principal_moments[i]:.5f}<extra></extra>"
+                    f"{label}<br>"
+                    f"I = {ik:.5f}<br>"
+                    "질량중심을 지나는 회전축<extra></extra>"
                 ),
+            )
+        )
+        traces.append(
+            go.Scatter3d(
+                x=[float(pos_end[0])],
+                y=[float(pos_end[1])],
+                z=[float(pos_end[2])],
+                mode="markers",
+                marker=dict(
+                    size=5,
+                    color=color,
+                    symbol="diamond",
+                    line=dict(color="rgb(255, 255, 255)", width=1),
+                ),
+                name=label,
+                legendgroup=label,
+                showlegend=False,
+                hoverinfo="skip",
             )
         )
     return traces
@@ -766,6 +792,8 @@ def plot_rho_grid(
     if show_physics:
         props = compute_inertia(grid)
         for trace in _com_offset_trace(props.com):
+            fig.add_trace(trace)
+        for trace in _principal_axis_traces(props, half):
             fig.add_trace(trace)
 
     fig.update_layout(

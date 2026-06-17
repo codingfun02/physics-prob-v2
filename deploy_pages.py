@@ -58,12 +58,20 @@ def build_site(output_dir: Path, site_dir: Path) -> int:
             shutil.copy2(png, png_dst / png.name)
 
     docs_dir = Path("docs")
-    guide = docs_dir / "density_to_simulation_guide.html"
-    if guide.exists():
-        dst = site_dir / "docs"
-        dst.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(guide, dst / guide.name)
-        n += 1
+    dst = site_dir / "docs"
+    for doc_name in ("density_to_simulation_guide.html", "controlled_v3_report.html"):
+        doc = docs_dir / doc_name
+        if doc.exists():
+            dst.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(doc, dst / doc.name)
+            n += 1
+
+    panels_src = docs_dir / "report_panels"
+    if panels_src.is_dir():
+        panels_dst = dst / "report_panels"
+        panels_dst.mkdir(parents=True, exist_ok=True)
+        for png in sorted(panels_src.glob("*.png")):
+            shutil.copy2(png, panels_dst / png.name)
 
     (site_dir / ".nojekyll").touch()
     return n

@@ -1,4 +1,4 @@
-"""PyBullet GUI — 균일 주사위 1회 던지기 프로토타입 (버튼 클릭)."""
+"""PyBullet GUI — 균일 밀도 주사위 1회 던지기 (버튼 클릭)."""
 
 from __future__ import annotations
 
@@ -6,9 +6,12 @@ import time
 
 import numpy as np
 import pybullet as p
+from scipy.spatial.transform import Rotation
 
 from config import (
+    DIE_HALF_SIZE,
     DROP_HEIGHT,
+    FACE_LABELS,
     MAX_SIM_STEPS,
     PHYSICS_DT,
     VEL_THRESHOLD,
@@ -25,9 +28,38 @@ from simulation.single_trial import (
 )
 
 SLOW_FACTOR = 2.0
+FACE_LABEL_OFFSET = DIE_HALF_SIZE * 1.02
 # PyBullet Params 패널은 ASCII만 표시됨 (한글 라벨 깨짐)
 THROW_BTN_LABEL = "Throw (1x)"
 THROW_KEY = ord("t")
+HUD_POS = [-1.4, 0, 1.2]
+
+
+class FaceLabelOverlay:
+    """주사위 면 번호(1~6) — 자세에 맞춰 갱신."""
+
+    def __init__(self) -> None:
+        self._ids: list[int] = []
+
+    def clear(self) -> None:
+        for item_id in self._ids:
+            p.removeUserDebugItem(item_id)
+        self._ids.clear()
+
+    def update(self, die_id: int) -> None:
+        pos, orn = p.getBasePositionAndOrientation(die_id)
+        rot = Rotation.from_quat(orn)
+        self.clear()
+        for normal, label in FACE_LABELS.items():
+            local = np.array(normal, dtype=float) * FACE_LABEL_OFFSET
+            world = rot.apply(local) + np.array(pos)
+            item_id = p.addUserDebugText(
+                str(label),
+                world.tolist(),
+                textColorRGB=[1.0, 1.0, 1.0],
+                textSize=1.4,
+            )
+            self._ids.append(item_id)
 
 
 def _configure_viewer() -> None:
@@ -51,6 +83,16 @@ def _is_settled(die_id: int) -> bool:
     )
 
 
+def _set_hud_text(item_id: int, text: str, *, rgb: tuple[float, float, float]) -> int:
+    p.removeUserDebugItem(item_id)
+    return p.addUserDebugText(
+        text,
+        HUD_POS,
+        textColorRGB=list(rgb),
+        textSize=1.1,
+    )
+
+
 def main() -> None:
     grid = get_preset_rho("uniform")
     props = compute_inertia(grid)
@@ -66,7 +108,20 @@ def main() -> None:
     p.changeVisualShape(die_id, -1, rgbaColor=[0.75, 0.78, 0.85, 1.0])
 
     throw_btn = p.addUserDebugParameter(THROW_BTN_LABEL, 1, 0, 0)
+    hint_id = p.addUserDebugText(
+        f"Params: '{THROW_BTN_LABEL}' or press T",
+        [-1.4, 0, 1.6],
+        textColorRGB=[0.9, 0.9, 0.3],
+        textSize=1.1,
+    )
+    result_id = p.addUserDebugText(
+        "Result: -  |  throws: 0",
+        HUD_POS,
+        textColorRGB=[0.4, 1.0, 0.5],
+        textSize=1.1,
+    )
 
+    face_labels = FaceLabelOverlay()
     last_btn_val = 0
     throw_count = 0
     simulating = False
@@ -83,13 +138,15 @@ def main() -> None:
         simulating = True
         still_count = 0
         step_count = 0
+        face_labels.update(die_id)
         print(f"\n--- 던지기 #{throw_count + 1} ---")
 
     orn, ang_vel = trial_initial_conditions()
     reset_die_for_trial(die_id, orn, ang_vel)
+    face_labels.update(die_id)
 
-    print("PyBullet GUI 프로토타입 — 창을 닫으면 종료됩니다.")
-    print(f"우측 Params 패널 '{THROW_BTN_LABEL}' 버튼 또는 키 T 로 던집니다.")
+    print("PyBullet GUI — 균일 밀도(ρ=1) 주사위")
+    print(f"우측 Params '{THROW_BTN_LABEL}' 버튼 또는 키 T 로 던집니다. 창을 닫으면 종료.")
 
     try:
         while p.isConnected():
@@ -108,6 +165,7 @@ def main() -> None:
 
             if simulating:
                 p.stepSimulation()
+                face_labels.update(die_id)
                 step_count += 1
 
                 if _is_settled(die_id):
@@ -117,6 +175,11 @@ def main() -> None:
                         bottom = get_bottom_face(final_orn)
                         throw_count += 1
                         simulating = False
+                        result_id = _set_hud_text(
+                            result_id,
+                            f"Result: face {bottom}  |  throws: {throw_count}",
+                            rgb=(0.4, 1.0, 0.5),
+                        )
                         print(f"바닥의 눈: {bottom}  (총 {throw_count}회)")
                 else:
                     still_count = 0
@@ -126,6 +189,11 @@ def main() -> None:
                     bottom = get_bottom_face(final_orn)
                     throw_count += 1
                     simulating = False
+                    result_id = _set_hud_text(
+                        result_id,
+                        f"Result: face {bottom} (timeout)  |  throws: {throw_count}",
+                        rgb=(1.0, 0.6, 0.3),
+                    )
                     print(f"시간 초과 — 바닥의 눈: {bottom}  (총 {throw_count}회)")
 
                 time.sleep(PHYSICS_DT * SLOW_FACTOR)
@@ -135,6 +203,9 @@ def main() -> None:
     except p.error:
         pass
     finally:
+        face_labels.clear()
+        p.removeUserDebugItem(hint_id)
+        p.removeUserDebugItem(result_id)
         print(f"\n종료 — 총 {throw_count}회 던짐")
 
 

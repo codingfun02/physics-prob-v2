@@ -25,6 +25,19 @@ from simulation.charts import (
 )
 from simulation.dashboard import build_dashboard
 from simulation.output_layout import ARCHIVED_STUDY_IDS
+
+
+def _iter_run_dirs(out: Path):
+    """output/runs 및 studies/**/runs 시뮬 폴더."""
+    runs_root = out / "runs"
+    if runs_root.is_dir():
+        for run_dir in sorted(runs_root.iterdir()):
+            if run_dir.is_dir():
+                yield run_dir
+    studies_root = out / "studies"
+    if studies_root.is_dir():
+        for results_path in sorted(studies_root.rglob("results.json")):
+            yield results_path.parent
 from simulation.run_descriptions import density_plot_title, probability_plot_title
 
 
@@ -106,7 +119,17 @@ def main() -> None:
     parser.add_argument("--output-dir", default=OUTPUT_DIR)
     parser.add_argument("--preset", default="ctrl_factor_f30", help="밀도 프리셋 이름")
     parser.add_argument("--all-previews", action="store_true", help="studies/*/density_previews 전부")
-    parser.add_argument("--all-runs", action="store_true", help="output/runs 질량·확률 차트 전부")
+    parser.add_argument("--all-runs", action="store_true", help="모든 시뮬 run 질량·확률 차트")
+    parser.add_argument(
+        "--study",
+        default=None,
+        help="특정 study만 확률 차트 재생성 (예: controlled_v3)",
+    )
+    parser.add_argument(
+        "--prob-only",
+        action="store_true",
+        help="확률(HTML+PNG)만 재생성",
+    )
     parser.add_argument(
         "--density-only",
         action="store_true",
@@ -117,10 +140,29 @@ def main() -> None:
 
     if args.density_only:
         print("질량분포 재생성…")
-        for run_dir in sorted((out / "runs").iterdir()):
-            if run_dir.is_dir():
-                _regenerate_run_density(run_dir, force=True)
+        for run_dir in _iter_run_dirs(out):
+            _regenerate_run_density(run_dir, force=True)
         print("완료")
+        return
+
+    study_axes = prob_y_axes_by_study(out)
+
+    if args.study:
+        print(f"확률 차트 재생성 ({args.study})…")
+        for run_dir in _iter_run_dirs(out):
+            results_path = run_dir / "results.json"
+            if not results_path.exists():
+                continue
+            data = json.loads(results_path.read_text(encoding="utf-8"))
+            if study_from_results(data) != args.study:
+                continue
+            if args.prob_only:
+                _regenerate_prob(run_dir, study_axes, force=True)
+            else:
+                _regenerate_run(run_dir, study_axes, force=True)
+        print("대시보드 갱신…")
+        path = build_dashboard(out)
+        print(f"완료: {path}")
         return
 
     print("차트 재생성…")
@@ -133,15 +175,15 @@ def main() -> None:
                 name = "_".join(stem.split("_")[1:]) if stem[:2].isdigit() else stem
                 _regenerate_density(name, html)
     elif not args.all_runs:
-        study_axes = prob_y_axes_by_study(out)
         for run_dir in sorted((out / "runs").glob(f"*_{args.preset}")):
             if run_dir.is_dir():
                 _regenerate_run(run_dir, study_axes, force=True)
 
     if args.all_runs:
-        study_axes = prob_y_axes_by_study(out)
-        for run_dir in sorted((out / "runs").iterdir()):
-            if run_dir.is_dir():
+        for run_dir in _iter_run_dirs(out):
+            if args.prob_only:
+                _regenerate_prob(run_dir, study_axes, force=True)
+            else:
                 _regenerate_run(run_dir, study_axes, force=True)
 
     print("대시보드 갱신…")

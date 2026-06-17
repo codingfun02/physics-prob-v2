@@ -13,7 +13,12 @@ def main():
     parser.add_argument(
         "--refresh-charts",
         action="store_true",
-        help="runs/ 의 확률 HTML을 막대 라벨 포함 형식으로 다시 생성",
+        help="확률 HTML·PNG를 study별 통일 y축으로 다시 생성",
+    )
+    parser.add_argument(
+        "--study",
+        default=None,
+        help="--refresh-charts 시 특정 study만 (예: controlled_v3)",
     )
     parser.add_argument(
         "--refresh-density",
@@ -37,7 +42,11 @@ def main():
         )
 
     if args.refresh_charts:
-        n = refresh_probability_charts(args.output_dir, only_stale=False)
+        n = refresh_probability_charts(
+            args.output_dir,
+            only_stale=False,
+            study_id=args.study,
+        )
         print(f"확률 차트 {n}개 갱신")
 
     if args.refresh_density:

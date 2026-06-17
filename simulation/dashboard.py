@@ -1378,6 +1378,7 @@ def refresh_probability_charts(
     *,
     only_stale: bool = True,
     run_ids: set[str] | None = None,
+    study_id: str | None = None,
 ) -> int:
     """기존 runs의 face_probabilities.html을 막대 라벨 포함 형식으로 다시 생성."""
     output_dir = Path(output_dir)
@@ -1386,18 +1387,20 @@ def refresh_probability_charts(
     for run in collect_runs(output_dir):
         if run_ids is not None and run["run_id"] not in run_ids:
             continue
-        results_path = output_dir / "runs" / run["run_id"] / "results.json"
+        if study_id is not None and run.get("study_id") != study_id:
+            continue
+        prob_path = output_dir / run["prob_url"]
+        results_path = prob_path.parent / "results.json"
         if not results_path.exists():
             continue
-        target = output_dir / Path(run["prob_url"])
-        if only_stale and _artifact_up_to_date(target, results_path):
+        if only_stale and _artifact_up_to_date(prob_path, results_path):
             continue
         data = json.loads(results_path.read_text(encoding="utf-8"))
         probs = {int(k): float(v) for k, v in data["probabilities"].items()}
         n_trials = data["n_trials"]
         extra = data.get("extra") or {}
         cancelled = extra.get("cancelled")
-        target = extra.get("target_trials", n_trials)
+        target_trials = extra.get("target_trials", n_trials)
         sid = study_from_results(data)
         if sid in group_axes:
             y_range, y_dtick = group_axes[sid]
@@ -1410,9 +1413,9 @@ def refresh_probability_charts(
                 data["rho_name"],
                 n_trials,
                 cancelled=cancelled,
-                target_trials=target,
+                target_trials=target_trials,
             ),
-            save_path=target,
+            save_path=prob_path,
             y_range=y_range,
             y_dtick=y_dtick,
         )
